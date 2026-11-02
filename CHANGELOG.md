@@ -5,6 +5,19 @@ All notable changes to PalateLog will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.18] - 2026-11-02
+
+### Improved & Fixed (Explore Screen Scroll Stability & Location Fallbacks)
+- **Explore Screen Scroll Reset & Top Position Guarantee**:
+  - Fixed an issue where Compose `LazyColumn` key preservation (`key = { it.restaurant.id }`) caused the list to scroll to the last card when location resolved and re-sorted the list by distance.
+  - Ensured `listState.scrollToItem(0)` unconditionally resets the scroll position to index `0` (top closest card) upon location resolution, filter change, or search query change in [`DashboardScreen.kt`](app/src/main/java/com/prismpixelvertex/palatelog/feature/dashboard/DashboardScreen.kt).
+- **Graceful "Near Me" Location Fallback**:
+  - Updated [`DashboardViewModel.kt`](app/src/main/java/com/prismpixelvertex/palatelog/feature/dashboard/DashboardViewModel.kt) so that when location is unavailable (or no spots are within 15km), selecting the "Near Me" filter chip gracefully falls back to showing all cards by recent visits rather than an empty list.
+  - Added explicit status notes ("📍 Location unavailable, showing all cards by recent visits" or "📍 No spots within 15km, showing all cards by recent visits") in [`DashboardScreen.kt`](app/src/main/java/com/prismpixelvertex/palatelog/feature/dashboard/DashboardScreen.kt) to keep the user clearly informed.
+- **Stabilized Location Fetching & Instant Cached Fixes**:
+  - Enhanced [`LocationClient.kt`](app/src/main/java/com/prismpixelvertex/palatelog/core/location/LocationClient.kt) to query `lastLocation` first for instant (~10ms) location resolution, with non-blocking reverse geocoding.
+  - Added location loading state (`_isLocationLoading`) in [`DashboardViewModel.kt`](app/src/main/java/com/prismpixelvertex/palatelog/feature/dashboard/DashboardViewModel.kt) to prevent sudden re-sorting layout jumps.
+
 ## [1.2.17] - 2026-11-02
 
 ### Fixed & Tested

@@ -79,6 +79,11 @@
     <string name="dashboard_empty_subtitle">Tap the Quick Regret Log or + button to record your first food insight!</string>
     <string name="dashboard_fab_quick_log">Quick Regret Log (3s)</string>
     <string name="dashboard_fab_full_visit">Full Visit Log</string>
+    <string name="dashboard_location_fetching">Finding nearby spots…</string>
+    <string name="dashboard_sorted_by_distance">📍 Sorted by distance to your location</string>
+    <string name="dashboard_sorted_by_recent">🕒 Sorted by recent visits</string>
+    <string name="dashboard_nearby_location_unavailable">📍 Location unavailable, showing all cards by recent visits</string>
+    <string name="dashboard_nearby_no_spots">📍 No spots within 15km, showing all cards by recent visits</string>
 
     <!-- Quick Capture Screen -->
     <string name="quick_capture_title">Quick Regret Log</string>

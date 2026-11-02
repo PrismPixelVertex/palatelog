@@ -12,10 +12,12 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import java.util.Locale
 import javax.inject.Inject
 import javax.inject.Singleton
 import kotlin.coroutines.resume
+import kotlin.time.Duration.Companion.milliseconds
 
 data class LocationResult(
     val latitude: Double,
@@ -38,15 +40,28 @@ class LocationClient @Inject constructor(
 
         val location: Location? = suspendCancellableCoroutine { continuation ->
             try {
-                fusedLocationClient.getCurrentLocation(
-                    Priority.PRIORITY_BALANCED_POWER_ACCURACY,
-                    cancellationTokenSource.token
-                ).addOnSuccessListener { loc ->
-                    continuation.resume(loc)
-                }.addOnFailureListener {
-                    // Fall back to last location
-                    fusedLocationClient.lastLocation.addOnSuccessListener { lastLoc ->
+                // 1. Try cached lastLocation first for instant response
+                fusedLocationClient.lastLocation.addOnSuccessListener { lastLoc ->
+                    if (lastLoc != null) {
                         continuation.resume(lastLoc)
+                    } else {
+                        // 2. Fall back to requesting fresh location fix
+                        fusedLocationClient.getCurrentLocation(
+                            Priority.PRIORITY_BALANCED_POWER_ACCURACY,
+                            cancellationTokenSource.token
+                        ).addOnSuccessListener { freshLoc ->
+                            continuation.resume(freshLoc)
+                        }.addOnFailureListener {
+                            continuation.resume(null)
+                        }
+                    }
+                }.addOnFailureListener {
+                    // Fall back to getCurrentLocation if lastLocation task failed
+                    fusedLocationClient.getCurrentLocation(
+                        Priority.PRIORITY_BALANCED_POWER_ACCURACY,
+                        cancellationTokenSource.token
+                    ).addOnSuccessListener { freshLoc ->
+                        continuation.resume(freshLoc)
                     }.addOnFailureListener {
                         continuation.resume(null)
                     }
@@ -61,7 +76,15 @@ class LocationClient @Inject constructor(
         }
 
         if (location != null) {
-            val geocoded = reverseGeocode(location.latitude, location.longitude)
+            // Reverse geocode with a short 500ms timeout so network lookup never delays returning lat/lng
+            val geocoded = try {
+                withTimeoutOrNull(500.milliseconds) {
+                    reverseGeocode(location.latitude, location.longitude)
+                } ?: Triple("", "", "")
+            } catch (_: Exception) {
+                Triple("", "", "")
+            }
+
             LocationResult(
                 latitude = location.latitude,
                 longitude = location.longitude,
