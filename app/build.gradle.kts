@@ -31,18 +31,9 @@ val ensureMapplsConfigFiles by tasks.registering {
             }
         }
 
-        // Guarantee variant-specific assets/mappls-conf.txt are always kept in sync with their respective .a.conf
-        listOf("debug", "release").forEach { variant ->
-            val variantDir = file("src/$variant")
-            val confFile = variantDir.listFiles { _, name -> name.endsWith(".a.conf") }?.firstOrNull()
-            if (confFile != null && confFile.exists()) {
-                val targetFile = file("src/$variant/assets/mappls-conf.txt")
-                targetFile.parentFile.mkdirs()
-                if (!targetFile.exists() || !targetFile.readBytes().contentEquals(confFile.readBytes())) {
-                    targetFile.writeBytes(confFile.readBytes())
-                }
-            }
-        }
+        // Clean up any stale variant-specific assets folders so only MapplsServicesTask manages assets/mappls-conf.txt
+        file("src/debug/assets").deleteRecursively()
+        file("src/release/assets").deleteRecursively()
     }
 }
 
@@ -53,7 +44,15 @@ tasks.matching { it.name.startsWith("process") && it.name.endsWith("MapplsServic
 }
 
 tasks.matching { it.name.startsWith("merge") && it.name.endsWith("Assets") }.configureEach {
-    dependsOn(ensureMapplsConfigFiles)
+    val variant = name.removePrefix("merge").removeSuffix("Assets")
+    // Serialize MapplsServicesTask before the asset merger to eliminate duplicate resource collisions and race conditions
+    dependsOn(tasks.matching { it.name == "process${variant}MapplsServices" })
+}
+
+tasks.named<Delete>("clean") {
+    delete(file("src/main/assets/mappls-conf.txt"))
+    delete(file("src/debug/assets"))
+    delete(file("src/release/assets"))
 }
 
 val keystorePropertiesFile = rootProject.file("keystore.properties")
