@@ -155,7 +155,7 @@ class MainActivity : ComponentActivity() {
                     Box(modifier = Modifier.fillMaxSize()) {
                         PalateLogNavGraph()
 
-                        if (showRestartDialog && isUpdateDownloaded) {
+                        if (BuildConfig.DEBUG && showRestartDialog && isUpdateDownloaded) {
                             AlertDialog(
                                 onDismissRequest = { showRestartDialog = false },
                                 icon = {
@@ -183,9 +183,7 @@ class MainActivity : ComponentActivity() {
                                     Button(
                                         onClick = {
                                             updateHelper.completeUpdate()
-                                            if (BuildConfig.DEBUG) {
-                                                Toast.makeText(this@MainActivity, "Debug: completeUpdate() invoked", Toast.LENGTH_SHORT).show()
-                                            }
+                                            Toast.makeText(this@MainActivity, "Debug: completeUpdate() invoked", Toast.LENGTH_SHORT).show()
                                         },
                                         colors = ButtonDefaults.buttonColors(containerColor = AmberPrimary),
                                         shape = RoundedCornerShape(12.dp)
@@ -208,7 +206,7 @@ class MainActivity : ComponentActivity() {
                         }
 
                         AnimatedVisibility(
-                            visible = isUpdateDownloaded,
+                            visible = isUpdateDownloaded && (!BuildConfig.DEBUG || !showRestartDialog),
                             enter = slideInVertically { it },
                             exit = slideOutVertically { it },
                             modifier = Modifier

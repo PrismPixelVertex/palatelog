@@ -193,7 +193,7 @@ Google Play In-App Updates allow notifying users when a new version is published
 ### Decision & Trade-offs
 * **Prioritized `InstallStatus.DOWNLOADED` Check**: Reordered update evaluation in `InAppUpdateHelper` to verify completed downloads before checking availability.
 * **Loop-Safe `onResume()` Query**: Restored `onResume()` update checking restricted solely to completed flexible downloads or interrupted immediate updates.
-* **Explicit Restart Modal (`AlertDialog`)**: Prompts the user to restart now or postpone when an update completes downloading in the background.
+* **Debug Modal (`AlertDialog`) & Non-Intrusive Bottom Banner**: Restricted modal `AlertDialog` to debug builds (`BuildConfig.DEBUG`) for testing, while production release builds use the non-intrusive bottom banner card (`AnimatedVisibility`). Enforced mutual exclusion so both prompts never render simultaneously.
 * **Non-Overlapping Banner Card**: Positioned bottom update banners (`padding(bottom = 96.dp)`) safely above bottom navigation bars.
 
 ---

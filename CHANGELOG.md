@@ -5,6 +5,19 @@ All notable changes to PalateLog will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.17] - 2026-11-02
+
+### Fixed & Tested
+- **In-App Update Dialog Scoping & Mutual Exclusion**:
+  - Restricted the modal update restart `AlertDialog` to `BuildConfig.DEBUG` in [`MainActivity.kt`](app/src/main/java/com/prismpixelvertex/palatelog/MainActivity.kt) so it is used exclusively for debug testing and ADB broadcast simulation (`TEST_UPDATE`).
+  - Enforced mutual exclusion between the modal `AlertDialog` and the persistent bottom banner card (`AnimatedVisibility` condition: `visible = isUpdateDownloaded && (!BuildConfig.DEBUG || !showRestartDialog)`), preventing both update restart prompts from ever displaying simultaneously on screen.
+  - Documented architectural decisions in [ADR 010 in `decisions_and_tradeoffs.md`](doc/decisions_and_tradeoffs.md#L188-L200).
+- **ADB Update Simulation Testing & Verification**:
+  - Tested simulated update flows on a physical ADB connected device (`RZCT41A18CE`).
+  - Verified `adb shell am broadcast -a com.prismpixelvertex.palatelog.TEST_UPDATE --es state DOWNLOADED`: modal `AlertDialog` pops up cleanly with the bottom banner card hidden.
+  - Verified postponed state: dismissing the dialog via **"Later"** (`showRestartDialog = false`) seamlessly reveals the persistent bottom banner card above navigation bars.
+  - Verified `adb shell am broadcast -a com.prismpixelvertex.palatelog.TEST_UPDATE --es state RESET`: resets `isUpdateDownloaded` state and dismisses all update UI elements cleanly.
+
 ## [1.2.16] - 2026-11-01
 
 ### Added & Refactored (Plug-and-Play Indian-Compliant Map Architecture)
