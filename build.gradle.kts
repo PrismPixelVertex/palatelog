@@ -8,7 +8,7 @@ buildscript {
         }
     }
     dependencies {
-        classpath("com.mappls.services:mappls-services:1.0.0")
+        classpath(libs.mappls.services)
     }
 }
 plugins {
