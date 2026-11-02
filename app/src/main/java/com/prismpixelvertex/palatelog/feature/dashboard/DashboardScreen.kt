@@ -46,6 +46,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FilterChip
@@ -123,6 +124,23 @@ fun DashboardScreen(
                     isScrollIndicatorVisible = false
                 }
             }
+    }
+
+    // Refresh location whenever entering/returning to the Explore screen
+    LaunchedEffect(Unit) {
+        viewModel.refreshLocation()
+    }
+
+    // Reset scroll position to top whenever search query or filter selection changes
+    LaunchedEffect(uiState.selectedFilter, uiState.searchQuery) {
+        listState.scrollToItem(0)
+    }
+
+    // Reset scroll position to top when location loading completes or distance sorting is applied
+    LaunchedEffect(uiState.isLocationLoading, uiState.isSortedByDistance) {
+        if (!uiState.isLocationLoading) {
+            listState.scrollToItem(0)
+        }
     }
 
     Scaffold(
@@ -335,6 +353,72 @@ fun DashboardScreen(
                     onClick = { viewModel.onFilterSelected(DashboardFilter.DELIVERY) },
                     label = { Text(stringResource(R.string.dashboard_filter_delivery)) }
                 )
+            }
+
+            // Location / Sorting Status Badge Indicator
+            if (uiState.isLocationLoading) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 2.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(12.dp),
+                        strokeWidth = 1.5.dp,
+                        color = AmberPrimary
+                    )
+                    Text(
+                        text = stringResource(R.string.dashboard_location_fetching),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            } else if (uiState.selectedFilter == DashboardFilter.NEARBY && uiState.isNearbyFallbackActive) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 2.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    val noteText = if (uiState.userLatitude == null) {
+                        stringResource(R.string.dashboard_nearby_location_unavailable)
+                    } else {
+                        stringResource(R.string.dashboard_nearby_no_spots)
+                    }
+                    Text(
+                        text = noteText,
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            } else if (uiState.isSortedByDistance && uiState.searchQuery.isBlank()) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 2.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = stringResource(R.string.dashboard_sorted_by_distance),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            } else if (!uiState.isSortedByDistance && uiState.searchQuery.isBlank()) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 2.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = stringResource(R.string.dashboard_sorted_by_recent),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
             }
 
             // Restaurant Cards List

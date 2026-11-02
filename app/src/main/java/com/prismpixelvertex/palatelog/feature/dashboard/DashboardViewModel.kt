@@ -24,6 +24,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
+import kotlin.time.Duration.Companion.milliseconds
 import javax.inject.Inject
 
 enum class DashboardFilter {
@@ -55,6 +57,9 @@ data class DashboardUiState(
     val userLatitude: Double? = null,
     val userLongitude: Double? = null,
     val isLoading: Boolean = false,
+    val isLocationLoading: Boolean = true,
+    val isSortedByDistance: Boolean = false,
+    val isNearbyFallbackActive: Boolean = false,
     val showFirstLaunchHelpDialog: Boolean = false
 )
 
@@ -77,6 +82,7 @@ class DashboardViewModel @Inject constructor(
     private val _searchQuery = MutableStateFlow("")
     private val _selectedFilter = MutableStateFlow(DashboardFilter.ALL)
     private val _userLocation = MutableStateFlow<Pair<Double, Double>?>(null)
+    private val _isLocationLoading = MutableStateFlow(true)
     private val _showFirstLaunchHelpDialog = MutableStateFlow(
         !context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
             .getBoolean(KEY_FIRST_LAUNCH_HELP, false)
@@ -89,6 +95,7 @@ class DashboardViewModel @Inject constructor(
         _searchQuery,
         _selectedFilter,
         _userLocation,
+        _isLocationLoading,
         _showFirstLaunchHelpDialog
     ) { flows ->
         @Suppress("UNCHECKED_CAST")
@@ -101,7 +108,8 @@ class DashboardViewModel @Inject constructor(
         val filter = flows[4] as DashboardFilter
         @Suppress("UNCHECKED_CAST")
         val location = flows[5] as Pair<Double, Double>?
-        val showHelpDialog = flows[6] as Boolean
+        val isLocLoading = flows[6] as Boolean
+        val showHelpDialog = flows[7] as Boolean
 
         val domainRestaurants = restaurantEntities.map { it.toDomain() }
         val domainDishes = dishEntities.map { it.toDomain() }
@@ -185,12 +193,27 @@ class DashboardViewModel @Inject constructor(
             )
         }
 
+        var nearbyFallbackActive = false
+
         val categoryFiltered = when (filter) {
             DashboardFilter.ALL -> evaluatedCards
             DashboardFilter.GO_ONLY -> evaluatedCards.filter { it.restaurant.overallVerdict == Verdict.GO }
             DashboardFilter.NO_GO_ONLY -> evaluatedCards.filter { it.restaurant.overallVerdict == Verdict.NO_GO }
-            DashboardFilter.NEARBY -> evaluatedCards.filter { card ->
-                card.distanceKm != null && card.distanceKm <= 15.0
+            DashboardFilter.NEARBY -> {
+                if (location != null) {
+                    val nearbyList = evaluatedCards.filter { card ->
+                        card.distanceKm != null && card.distanceKm <= 15.0
+                    }
+                    if (nearbyList.isNotEmpty()) {
+                        nearbyList
+                    } else {
+                        nearbyFallbackActive = true
+                        evaluatedCards
+                    }
+                } else {
+                    nearbyFallbackActive = true
+                    evaluatedCards
+                }
             }
             DashboardFilter.HIGHWAY -> evaluatedCards.filter {
                 it.restaurant.highwayOrRoute.isNotBlank() || it.restaurant.restaurantType.name == "DHABA"
@@ -230,12 +253,16 @@ class DashboardViewModel @Inject constructor(
             noGoCount = domainRestaurants.count { it.overallVerdict == Verdict.NO_GO },
             userLatitude = location?.first,
             userLongitude = location?.second,
+            isLoading = false,
+            isLocationLoading = isLocLoading,
+            isSortedByDistance = location != null,
+            isNearbyFallbackActive = nearbyFallbackActive,
             showFirstLaunchHelpDialog = showHelpDialog
         )
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
-        initialValue = DashboardUiState(isLoading = true)
+        initialValue = DashboardUiState(isLoading = true, isLocationLoading = true)
     )
 
     init {
@@ -262,9 +289,18 @@ class DashboardViewModel @Inject constructor(
 
     fun refreshLocation() {
         viewModelScope.launch {
-            val loc = locationService.getCurrentLocation()
-            if (loc != null) {
-                _userLocation.value = Pair(loc.latitude, loc.longitude)
+            _isLocationLoading.value = true
+            try {
+                val loc = withTimeoutOrNull(3000.milliseconds) {
+                    locationService.getCurrentLocation()
+                }
+                if (loc != null) {
+                    _userLocation.value = Pair(loc.latitude, loc.longitude)
+                }
+            } catch (_: Exception) {
+                // Ignore location timeout or error
+            } finally {
+                _isLocationLoading.value = false
             }
         }
     }
