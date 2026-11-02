@@ -1,6 +1,7 @@
 package com.prismpixelvertex.palatelog.core.designsystem
 
 import android.os.Bundle
+import android.util.Log
 import android.view.Gravity
 import android.widget.FrameLayout
 import androidx.compose.runtime.Composable
@@ -26,6 +27,8 @@ import com.mappls.sdk.maps.annotations.Marker
 import com.mappls.sdk.maps.annotations.MarkerOptions
 import com.mappls.sdk.maps.camera.CameraUpdateFactory
 import com.mappls.sdk.maps.geometry.LatLng
+
+private const val TAG = "PalateLog_Mappls"
 
 /**
  * Mappls (MapmyIndia) vector map renderer.
@@ -139,6 +142,7 @@ fun MapplsMapRenderer(
             }
 
             override fun onMapError(code: Int, message: String?) {
+                Log.e(TAG, "Mappls onMapError: code=$code, message=$message")
                 MapProviderConfig.notifyFallbackEngaged()
                 onInitializationFailed?.invoke()
             }

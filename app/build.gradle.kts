@@ -16,7 +16,10 @@ apply(plugin = "com.mappls.services.android")
 // so that the Mappls Services Gradle task can execute and compile successfully without failing the build.
 val ensureMapplsConfigFiles by tasks.registering {
     doLast {
-        val hasOlf = projectDir.listFiles { _, name -> name.endsWith(".a.olf") }?.isNotEmpty() == true
+        val hasOlf = fileTree(projectDir) {
+            include("**/*.a.olf")
+            exclude("mock.a.olf")
+        }.files.isNotEmpty()
         if (!hasOlf) {
             val mockOlf = file("mock.a.olf")
             val mockConf = file("mock.a.conf")
@@ -27,10 +30,29 @@ val ensureMapplsConfigFiles by tasks.registering {
                 mockConf.writeText("{\"client_id\":\"mock\",\"client_secret\":\"mock\"}")
             }
         }
+
+        // Guarantee variant-specific assets/mappls-conf.txt are always kept in sync with their respective .a.conf
+        listOf("debug", "release").forEach { variant ->
+            val variantDir = file("src/$variant")
+            val confFile = variantDir.listFiles { _, name -> name.endsWith(".a.conf") }?.firstOrNull()
+            if (confFile != null && confFile.exists()) {
+                val targetFile = file("src/$variant/assets/mappls-conf.txt")
+                targetFile.parentFile.mkdirs()
+                if (!targetFile.exists() || !targetFile.readBytes().contentEquals(confFile.readBytes())) {
+                    targetFile.writeBytes(confFile.readBytes())
+                }
+            }
+        }
     }
 }
 
 tasks.matching { it.name.startsWith("process") && it.name.endsWith("MapplsServices") }.configureEach {
+    dependsOn(ensureMapplsConfigFiles)
+    // Prevent Gradle from marking MapplsServicesTask UP-TO-DATE when switching between build variants
+    outputs.upToDateWhen { false }
+}
+
+tasks.matching { it.name.startsWith("merge") && it.name.endsWith("Assets") }.configureEach {
     dependsOn(ensureMapplsConfigFiles)
 }
 

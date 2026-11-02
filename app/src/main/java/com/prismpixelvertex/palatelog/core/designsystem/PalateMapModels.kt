@@ -1,6 +1,7 @@
 package com.prismpixelvertex.palatelog.core.designsystem
 
 import android.graphics.drawable.Drawable
+import android.util.Log
 import androidx.annotation.StringRes
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -52,6 +53,8 @@ data class ActiveMapProviderState(
     val isFallbackEngaged: Boolean,
 )
 
+private const val TAG = "PalateLog_Map"
+
 /**
  * Runtime configuration and fallback state for map providers.
  */
@@ -74,11 +77,13 @@ object MapProviderConfig {
     }
 
     fun notifyMapplsInitialized(success: Boolean) {
+        Log.d(TAG, "notifyMapplsInitialized: success=$success")
         isMapplsInitialized = success
         _providerState.value = resolveState()
     }
 
     fun notifyFallbackEngaged() {
+        Log.w(TAG, "notifyFallbackEngaged: falling back to OSM_DROID")
         isMapplsInitialized = false
         _providerState.value = resolveState()
     }
