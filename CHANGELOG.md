@@ -5,6 +5,26 @@ All notable changes to PalateLog will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.19] - 2026-11-02
+
+### Changed & Upgraded (Dependency Catalog & Toolchain Optimization)
+- **Dependency Catalog Modernization (`gradle/libs.versions.toml`)**:
+  - Upgraded Jetpack Compose BoM from `2024.10.01` to `2025.12.00` incorporating over 14 months of Material 3 and Compose runtime optimizations.
+  - Upgraded `navigation-compose` from `2.8.3` to `2.9.7` for modern predictive back gestures and type-safe routing.
+  - Upgraded `lifecycle-runtime-ktx` and `lifecycle-viewmodel-compose` from `2.8.7` to `2.10.0`.
+  - Upgraded `hilt` from `2.52` to `2.57` (highest supported release under AGP 8).
+  - Upgraded `hilt-navigation-compose` and `hilt-work` from `1.2.0` to `1.3.0`.
+  - Upgraded `core-ktx` from `1.15.0` to `1.18.0` and `activity-compose` from `1.9.3` to `1.12.0` (highest releases targeting SDK 36).
+  - Upgraded `work-runtime-ktx` from `2.10.0` to `2.12.0` for background sync workers.
+  - Upgraded `coil` image loader from `3.1.0` to `3.2.0`.
+  - Upgraded `play-services-auth` from `21.3.0` to `22.0.0` and `credentials` from `1.3.0` to `1.6.0`.
+  - Upgraded `osmdroid-android` from `6.1.18` to `6.1.20`.
+  - Upgraded `mappls-bom` from `2.0.0` to `2.0.3` (resolving `mappls-android-sdk:9.0.3` and `mappls-services:1.0.1`).
+  - Upgraded `kotlinx-serialization-json` from `1.7.3` to `1.8.0` and `kotlinx-coroutines-android` from `1.9.0` to `1.10.1`.
+  - Upgraded testing dependencies (`androidx.test.ext:junit` `1.2.1` -> `1.3.0`, `espresso-core` `3.6.1` -> `3.7.0`).
+- **Dependency Strategy & Compatibility Audit Documentation**:
+  - Added comprehensive technical audit and risk analysis record in [`doc/dependency_upgrade_strategy_and_audit.md`](doc/dependency_upgrade_strategy_and_audit.md) detailing upstream SDK 37, Kotlin metadata, and AGP 9 architecture boundaries.
+
 ## [1.2.18] - 2026-11-02
 
 ### Improved & Fixed (Explore Screen Scroll Stability & Location Fallbacks)
@@ -26,7 +46,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Enforced mutual exclusion between the modal `AlertDialog` and the persistent bottom banner card (`AnimatedVisibility` condition: `visible = isUpdateDownloaded && (!BuildConfig.DEBUG || !showRestartDialog)`), preventing both update restart prompts from ever displaying simultaneously on screen.
   - Documented architectural decisions in [ADR 010 in `decisions_and_tradeoffs.md`](doc/decisions_and_tradeoffs.md#L188-L200).
 - **ADB Update Simulation Testing & Verification**:
-  - Tested simulated update flows on a physical ADB connected device (`RZCT41A18CE`).
+  - Tested simulated update flows on a physical ADB connected Android test device.
   - Verified `adb shell am broadcast -a com.prismpixelvertex.palatelog.TEST_UPDATE --es state DOWNLOADED`: modal `AlertDialog` pops up cleanly with the bottom banner card hidden.
   - Verified postponed state: dismissing the dialog via **"Later"** (`showRestartDialog = false`) seamlessly reveals the persistent bottom banner card above navigation bars.
   - Verified `adb shell am broadcast -a com.prismpixelvertex.palatelog.TEST_UPDATE --es state RESET`: resets `isUpdateDownloaded` state and dismisses all update UI elements cleanly.
