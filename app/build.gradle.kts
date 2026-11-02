@@ -16,7 +16,10 @@ apply(plugin = "com.mappls.services.android")
 // so that the Mappls Services Gradle task can execute and compile successfully without failing the build.
 val ensureMapplsConfigFiles by tasks.registering {
     doLast {
-        val hasOlf = projectDir.listFiles { _, name -> name.endsWith(".a.olf") }?.isNotEmpty() == true
+        val hasOlf = fileTree(projectDir) {
+            include("**/*.a.olf")
+            exclude("mock.a.olf")
+        }.files.isNotEmpty()
         if (!hasOlf) {
             val mockOlf = file("mock.a.olf")
             val mockConf = file("mock.a.conf")
@@ -27,11 +30,29 @@ val ensureMapplsConfigFiles by tasks.registering {
                 mockConf.writeText("{\"client_id\":\"mock\",\"client_secret\":\"mock\"}")
             }
         }
+
+        // Clean up any stale variant-specific assets folders so only MapplsServicesTask manages assets/mappls-conf.txt
+        file("src/debug/assets").deleteRecursively()
+        file("src/release/assets").deleteRecursively()
     }
 }
 
 tasks.matching { it.name.startsWith("process") && it.name.endsWith("MapplsServices") }.configureEach {
     dependsOn(ensureMapplsConfigFiles)
+    // Prevent Gradle from marking MapplsServicesTask UP-TO-DATE when switching between build variants
+    outputs.upToDateWhen { false }
+}
+
+tasks.matching { it.name.startsWith("merge") && it.name.endsWith("Assets") }.configureEach {
+    val variant = name.removePrefix("merge").removeSuffix("Assets")
+    // Serialize MapplsServicesTask before the asset merger to eliminate duplicate resource collisions and race conditions
+    dependsOn(tasks.matching { it.name == "process${variant}MapplsServices" })
+}
+
+tasks.named<Delete>("clean") {
+    delete(file("src/main/assets/mappls-conf.txt"))
+    delete(file("src/debug/assets"))
+    delete(file("src/release/assets"))
 }
 
 val keystorePropertiesFile = rootProject.file("keystore.properties")
