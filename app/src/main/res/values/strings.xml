@@ -489,4 +489,11 @@
     <string name="map_acquiring_address">Acquiring Address…</string>
     <string name="map_selected_spot_default">Selected Location Spot</string>
     <string name="map_coords_fmt">📍 Coordinates: %1$s, %2$s</string>
+    <!-- Camera & Photo Capture Strings -->
+    <string name="camera_permission_required">Camera permission is required to capture photos</string>
+    <string name="camera_picker_error">Could not open picker: %1$s</string>
+    <string name="camera_capture_error">Could not capture photo: %1$s</string>
+    <string name="camera_prepare_error">Error preparing capture: %1$s</string>
+    <string name="camera_cd_switch">Switch camera</string>
+    <string name="camera_cd_take_photo">Take photo</string>
 </resources>

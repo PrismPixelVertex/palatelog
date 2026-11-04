@@ -577,7 +577,7 @@ fun PhotoAttachmentBox(
         if (isGranted) {
             showCameraXDialog = true
         } else {
-            Toast.makeText(context, "Camera permission is required to capture photos", Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, context.getString(R.string.camera_permission_required), Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -641,7 +641,7 @@ fun PhotoAttachmentBox(
                 try {
                     pickPhotoLauncher.launch("image/*")
                 } catch (e: Exception) {
-                    Toast.makeText(context, "Could not open picker: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, context.getString(R.string.camera_picker_error, e.localizedMessage ?: ""), Toast.LENGTH_SHORT).show()
                 }
             },
             shape = RoundedCornerShape(8.dp),

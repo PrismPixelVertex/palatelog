@@ -38,12 +38,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.prismpixelvertex.palatelog.R
 import com.prismpixelvertex.palatelog.core.util.MediaUtils
 
 /**
@@ -139,7 +141,7 @@ fun CameraXCaptureDialog(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Close,
-                        contentDescription = "Close",
+                        contentDescription = stringResource(R.string.action_close),
                         tint = Color.White
                     )
                 }
@@ -156,7 +158,7 @@ fun CameraXCaptureDialog(
                 ) {
                     Icon(
                         imageVector = Icons.Default.FlipCameraAndroid,
-                        contentDescription = "Switch Camera",
+                        contentDescription = stringResource(R.string.camera_cd_switch),
                         tint = Color.White
                     )
                 }
@@ -196,7 +198,7 @@ fun CameraXCaptureDialog(
                                             isCapturing = false
                                             Toast.makeText(
                                                 context,
-                                                "Could not capture photo: ${exception.localizedMessage}",
+                                                context.getString(R.string.camera_capture_error, exception.localizedMessage ?: ""),
                                                 Toast.LENGTH_SHORT
                                             ).show()
                                         }
@@ -206,7 +208,7 @@ fun CameraXCaptureDialog(
                                 isCapturing = false
                                 Toast.makeText(
                                     context,
-                                    "Error preparing capture: ${e.localizedMessage}",
+                                    context.getString(R.string.camera_prepare_error, e.localizedMessage ?: ""),
                                     Toast.LENGTH_SHORT
                                 ).show()
                             }
@@ -218,7 +220,7 @@ fun CameraXCaptureDialog(
                     ) {
                         Icon(
                             imageVector = Icons.Default.CameraAlt,
-                            contentDescription = "Take Photo",
+                            contentDescription = stringResource(R.string.camera_cd_take_photo),
                             modifier = Modifier.size(36.dp)
                         )
                     }
