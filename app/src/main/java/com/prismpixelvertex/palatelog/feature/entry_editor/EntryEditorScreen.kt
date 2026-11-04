@@ -1,9 +1,13 @@
 package com.prismpixelvertex.palatelog.feature.entry_editor
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
+import com.prismpixelvertex.palatelog.core.designsystem.CameraXCaptureDialog
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -33,7 +37,6 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.PhotoLibrary
-import com.prismpixelvertex.palatelog.core.util.TakePictureWithRearCamera
 import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -566,7 +569,17 @@ fun PhotoAttachmentBox(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    var tempCameraUri by remember { mutableStateOf<Uri?>(null) }
+    var showCameraXDialog by remember { mutableStateOf(false) }
+
+    val cameraPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            showCameraXDialog = true
+        } else {
+            Toast.makeText(context, "Camera permission is required to capture photos", Toast.LENGTH_SHORT).show()
+        }
+    }
 
     val pickPhotoLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -577,13 +590,14 @@ fun PhotoAttachmentBox(
         }
     }
 
-    val takePhotoLauncher = rememberLauncherForActivityResult(
-        contract = TakePictureWithRearCamera()
-    ) { success ->
-        if (success && tempCameraUri != null) {
-            val saved = MediaUtils.copyUriToInternalStorage(context, tempCameraUri!!)
-            onPhotoAdded(saved)
-        }
+    if (showCameraXDialog) {
+        CameraXCaptureDialog(
+            onDismissRequest = { showCameraXDialog = false },
+            onPhotoCaptured = { uri ->
+                val saved = MediaUtils.copyUriToInternalStorage(context, uri)
+                onPhotoAdded(saved)
+            }
+        )
     }
 
     Row(
@@ -642,12 +656,15 @@ fun PhotoAttachmentBox(
 
         OutlinedButton(
             onClick = {
-                try {
-                    val pair = MediaUtils.createTempCameraUri(context)
-                    tempCameraUri = pair.second
-                    takePhotoLauncher.launch(pair.second)
-                } catch (e: Exception) {
-                    Toast.makeText(context, "Could not open camera: ${e.localizedMessage}", Toast.LENGTH_SHORT).show()
+                val hasCameraPermission = ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.CAMERA
+                ) == PackageManager.PERMISSION_GRANTED
+
+                if (hasCameraPermission) {
+                    showCameraXDialog = true
+                } else {
+                    cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
                 }
             },
             shape = RoundedCornerShape(8.dp),

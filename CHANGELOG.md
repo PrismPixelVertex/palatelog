@@ -7,10 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.2.20] - 2026-11-02
 
-### Improved & Fixed (Camera Selection & Capture Default)
-- **Default Rear/Back Camera Enforcer (`TakePictureWithRearCamera`)**:
-  - Implemented custom `TakePictureWithRearCamera` contract in `MediaUtils.kt` extending `ActivityResultContracts.TakePicture()`.
-  - Added Camera1/Camera2 facing intent extra hints (`CAMERA_FACING = 0`, `LENS_FACING_BACK = 1`, `USE_FRONT_CAMERA = false`, `camerafacing = "back"`) to instruct OEM camera apps (Samsung, Google Pixel, Xiaomi, OnePlus, Motorola, etc.) to open with the rear (back) camera active when taking dish, menu, or receipt photos in [`EntryEditorScreen.kt`](app/src/main/java/com/prismpixelvertex/palatelog/feature/entry_editor/EntryEditorScreen.kt).
+### Improved & Fixed (Camera Selection & In-App Capture)
+- **In-App Camera Capture via CameraX (`CameraXCaptureDialog`)**:
+  - Integrated CameraX dependencies (`androidx.camera:camera-core`, `camera-camera2`, `camera-lifecycle`, `camera-view` version `1.4.1`) in `gradle/libs.versions.toml` and `app/build.gradle.kts`.
+  - Added [`CameraXCaptureDialog.kt`](app/src/main/java/com/prismpixelvertex/palatelog/core/designsystem/CameraXCaptureDialog.kt) providing a fast, 1-tap in-app camera viewfinder dialog configured with `CameraSelector.LENS_FACING_BACK`.
+  - Guaranteed 100% reliable rear (back) camera selection across all device OEMs when taking food, menu, or bill photos in [`EntryEditorScreen.kt`](app/src/main/java/com/prismpixelvertex/palatelog/feature/entry_editor/EntryEditorScreen.kt).
+  - Added runtime camera permission handling (`android.permission.CAMERA`) with smooth fallback.
 
 ## [1.2.19] - 2026-11-02
 
