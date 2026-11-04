@@ -6,6 +6,6 @@ package com.prismpixelvertex.palatelog.core.location
  * (e.g., FusedLocationProviderClient on Android, CoreLocation on iOS).
  */
 interface LocationService {
-    suspend fun getCurrentLocation(): LocationResult?
+    suspend fun getCurrentLocation(skipGeocoding: Boolean = false): LocationResult?
     suspend fun reverseGeocode(latitude: Double, longitude: Double): Triple<String, String, String>
 }
