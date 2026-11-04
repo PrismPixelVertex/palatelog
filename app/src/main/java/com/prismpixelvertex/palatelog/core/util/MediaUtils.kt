@@ -15,9 +15,21 @@ import java.util.UUID
 class TakePictureWithRearCamera : ActivityResultContracts.TakePicture() {
     override fun createIntent(context: Context, input: Uri): Intent {
         return super.createIntent(context, input).apply {
-            putExtra("android.intent.extras.CAMERA_FACING", 0) // CAMERA_FACING_BACK
-            putExtra("android.intent.extras.LENS_FACING_FRONT", 0)
+            // Camera1 API extra (0 = CAMERA_FACING_BACK)
+            putExtra("android.intent.extras.CAMERA_FACING", 0)
+            putExtra("android.intent.extra.CAMERA_FACING", 0)
+
+            // Camera2 API extra (1 = LENS_FACING_BACK)
+            putExtra("android.intent.extras.LENS_FACING_BACK", 1)
+            putExtra("android.intent.extra.LENS_FACING_BACK", 1)
+
+            // Boolean front-camera overrides
             putExtra("android.intent.extra.USE_FRONT_CAMERA", false)
+            putExtra("android.intent.extras.USE_FRONT_CAMERA", false)
+
+            // Vendor-specific string/int hints (Samsung, MIUI, etc.)
+            putExtra("camerafacing", "back")
+            putExtra("previous_mode", 0)
         }
     }
 }

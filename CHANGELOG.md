@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Improved & Fixed (Camera Selection & Capture Default)
 - **Default Rear/Back Camera Enforcer (`TakePictureWithRearCamera`)**:
   - Implemented custom `TakePictureWithRearCamera` contract in `MediaUtils.kt` extending `ActivityResultContracts.TakePicture()`.
-  - Added camera-facing intent extra hints (`CAMERA_FACING = 0`, `LENS_FACING_FRONT = 0`, `USE_FRONT_CAMERA = false`) to instruct third-party vendor camera apps (Samsung, Google Pixel, Xiaomi, OnePlus, Motorola, etc.) to open with the rear (back) camera active when taking dish, menu, or receipt photos in [`EntryEditorScreen.kt`](app/src/main/java/com/prismpixelvertex/palatelog/feature/entry_editor/EntryEditorScreen.kt).
+  - Added Camera1/Camera2 facing intent extra hints (`CAMERA_FACING = 0`, `LENS_FACING_BACK = 1`, `USE_FRONT_CAMERA = false`, `camerafacing = "back"`) to instruct OEM camera apps (Samsung, Google Pixel, Xiaomi, OnePlus, Motorola, etc.) to open with the rear (back) camera active when taking dish, menu, or receipt photos in [`EntryEditorScreen.kt`](app/src/main/java/com/prismpixelvertex/palatelog/feature/entry_editor/EntryEditorScreen.kt).
 
 ## [1.2.19] - 2026-11-02
 
