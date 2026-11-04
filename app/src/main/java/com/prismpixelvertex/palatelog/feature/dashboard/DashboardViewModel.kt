@@ -75,10 +75,13 @@ class DashboardViewModel @Inject constructor(
     companion object {
         private const val PREFS_NAME = "palatelog_prefs"
         private const val KEY_FIRST_LAUNCH_HELP = "has_seen_first_launch_help"
+        private const val LOCATION_CACHE_EXPIRY_MS = 5 * 60 * 1000L // 5 minutes location cache expiry
+        private const val SIGNIFICANT_DISTANCE_SHIFT_KM = 0.05 // 50 meters shift threshold for list re-sorting
     }
 
     private val prefs by lazy { context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE) }
 
+    private var lastLocationFetchTime = 0L
     private val _searchQuery = MutableStateFlow("")
     private val _selectedFilter = MutableStateFlow(DashboardFilter.ALL)
     private val _userLocation = MutableStateFlow<Pair<Double, Double>?>(null)
@@ -287,15 +290,39 @@ class DashboardViewModel @Inject constructor(
         _selectedFilter.value = filter
     }
 
-    fun refreshLocation() {
+    fun refreshLocation(force: Boolean = false) {
+        val currentTime = System.currentTimeMillis()
+        if (!force && _userLocation.value != null && (currentTime - lastLocationFetchTime) < LOCATION_CACHE_EXPIRY_MS) {
+            _isLocationLoading.value = false
+            return
+        }
+
         viewModelScope.launch {
-            _isLocationLoading.value = true
+            if (_userLocation.value == null) {
+                _isLocationLoading.value = true
+            }
             try {
                 val loc = withTimeoutOrNull(3000.milliseconds) {
-                    locationService.getCurrentLocation()
+                    locationService.getCurrentLocation(skipGeocoding = true)
                 }
                 if (loc != null) {
-                    _userLocation.value = Pair(loc.latitude, loc.longitude)
+                    val prevLoc = _userLocation.value
+                    if (prevLoc == null) {
+                        _userLocation.value = Pair(loc.latitude, loc.longitude)
+                        lastLocationFetchTime = System.currentTimeMillis()
+                    } else {
+                        val movedKm = GeoUtils.calculateDistanceKm(
+                            prevLoc.first, prevLoc.second,
+                            loc.latitude, loc.longitude
+                        )
+                        if (movedKm >= SIGNIFICANT_DISTANCE_SHIFT_KM) {
+                            _userLocation.value = Pair(loc.latitude, loc.longitude)
+                            lastLocationFetchTime = System.currentTimeMillis()
+                        } else {
+                            // Location has not shifted significantly (under 50m); extend cache timestamp
+                            lastLocationFetchTime = System.currentTimeMillis()
+                        }
+                    }
                 }
             } catch (_: Exception) {
                 // Ignore location timeout or error

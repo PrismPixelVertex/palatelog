@@ -35,7 +35,7 @@ class LocationClient @Inject constructor(
 ) : LocationService {
 
     @SuppressLint("MissingPermission")
-    override suspend fun getCurrentLocation(): LocationResult? = withContext(Dispatchers.IO) {
+    override suspend fun getCurrentLocation(skipGeocoding: Boolean): LocationResult? = withContext(Dispatchers.IO) {
         val cancellationTokenSource = CancellationTokenSource()
 
         val location: Location? = suspendCancellableCoroutine { continuation ->
@@ -76,12 +76,16 @@ class LocationClient @Inject constructor(
         }
 
         if (location != null) {
-            // Reverse geocode with a short 500ms timeout so network lookup never delays returning lat/lng
-            val geocoded = try {
-                withTimeoutOrNull(500.milliseconds) {
-                    reverseGeocode(location.latitude, location.longitude)
-                } ?: Triple("", "", "")
-            } catch (_: Exception) {
+            // Reverse geocode with a short 500ms timeout unless skipGeocoding is requested (for fast distance sorting)
+            val geocoded = if (!skipGeocoding) {
+                try {
+                    withTimeoutOrNull(500.milliseconds) {
+                        reverseGeocode(location.latitude, location.longitude)
+                    } ?: Triple("", "", "")
+                } catch (_: Exception) {
+                    Triple("", "", "")
+                }
+            } else {
                 Triple("", "", "")
             }
 
