@@ -1,10 +1,26 @@
 package com.prismpixelvertex.palatelog.core.util
 
 import android.content.Context
+import android.content.Intent
 import android.net.Uri
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.FileProvider
 import java.io.File
 import java.util.UUID
+
+/**
+ * Custom [ActivityResultContracts.TakePicture] contract that explicitly passes
+ * intent extras targeting the device's rear (back) camera across OEM camera implementations.
+ */
+class TakePictureWithRearCamera : ActivityResultContracts.TakePicture() {
+    override fun createIntent(context: Context, input: Uri): Intent {
+        return super.createIntent(context, input).apply {
+            putExtra("android.intent.extras.CAMERA_FACING", 0) // CAMERA_FACING_BACK
+            putExtra("android.intent.extras.LENS_FACING_FRONT", 0)
+            putExtra("android.intent.extra.USE_FRONT_CAMERA", false)
+        }
+    }
+}
 
 object MediaUtils {
 
@@ -38,3 +54,4 @@ object MediaUtils {
         }
     }
 }
+

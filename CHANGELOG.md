@@ -5,6 +5,13 @@ All notable changes to PalateLog will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.20] - 2026-11-02
+
+### Improved & Fixed (Camera Selection & Capture Default)
+- **Default Rear/Back Camera Enforcer (`TakePictureWithRearCamera`)**:
+  - Implemented custom `TakePictureWithRearCamera` contract in `MediaUtils.kt` extending `ActivityResultContracts.TakePicture()`.
+  - Added camera-facing intent extra hints (`CAMERA_FACING = 0`, `LENS_FACING_FRONT = 0`, `USE_FRONT_CAMERA = false`) to instruct third-party vendor camera apps (Samsung, Google Pixel, Xiaomi, OnePlus, Motorola, etc.) to open with the rear (back) camera active when taking dish, menu, or receipt photos in [`EntryEditorScreen.kt`](app/src/main/java/com/prismpixelvertex/palatelog/feature/entry_editor/EntryEditorScreen.kt).
+
 ## [1.2.19] - 2026-11-02
 
 ### Changed & Upgraded (Dependency Catalog & Toolchain Optimization)

@@ -33,6 +33,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Map
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.PhotoLibrary
+import com.prismpixelvertex.palatelog.core.util.TakePictureWithRearCamera
 import androidx.compose.material.icons.filled.Receipt
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -577,7 +578,7 @@ fun PhotoAttachmentBox(
     }
 
     val takePhotoLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.TakePicture()
+        contract = TakePictureWithRearCamera()
     ) { success ->
         if (success && tempCameraUri != null) {
             val saved = MediaUtils.copyUriToInternalStorage(context, tempCameraUri!!)
