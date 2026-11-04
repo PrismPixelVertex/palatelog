@@ -56,6 +56,7 @@ app/src/main/java/com/prismpixelvertex/palatelog/
 │       ├── Theme.kt            # Material 3 dark/light theme definitions
 │       ├── Type.kt             # Typography scale
 │       ├── LocationPickerDialog.kt # Map location selection dialog
+│       ├── CameraXCaptureDialog.kt # In-app CameraX capture dialog with guaranteed rear-camera selection
 │       ├── MapMarkerFactory.kt # Color-coded map pin generator
 │       ├── PalateInteractiveMap.kt # Universal plug-and-play composable map facade
 │       ├── MapplsMapRenderer.kt # Mappls (MapmyIndia) Survey-of-India compliant vector renderer
