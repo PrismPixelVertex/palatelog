@@ -248,12 +248,14 @@ Notifications can be either a high-leverage utility or an intrusive annoyance th
 
 ### Decisions & Multi-Phase Implementation Plan
 
-#### Phase 1: Actionable Sync Health & Family Delta Digest
+#### Phase 1: Actionable Sync Health & Family Delta Digest (Completed in v1.2.22 ✅)
 1. **Critical Auth & Permission Health Alerts Only**:
    - Notifications are dispatched **only** for actionable, blocking errors—specifically expired/revoked Google OAuth tokens or lost permissions on the shared Google Drive folder (`HTTP 401/403`).
    - Network dropouts and offline states are handled silently as standard operating conditions in `SyncWorker`.
+   - Clears automatically via `clearSyncAuthAlert()` upon successful sync recovery.
 2. **Family Sync Delta Digest**:
    - When periodic background sync successfully integrates newly added entries from family members, a low-priority, batched summary notification informs the user (e.g. *"Priya added a review for Nagarjuna: Must Try Biriyani, Avoid Chicken Fry"*).
+   - Verified on physical test device with deep-link intent routing directly to Settings (for auth) and Explore (for digests).
 
 #### Phase 2: Combined Highway Co-pilot with On-Demand Geofencing
 1. **User-Controlled Trip Session (Quick Settings Tile & In-App Toggle)**:
