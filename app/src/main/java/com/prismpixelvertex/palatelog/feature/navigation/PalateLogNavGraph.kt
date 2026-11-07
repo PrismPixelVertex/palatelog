@@ -14,6 +14,7 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -28,6 +29,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.prismpixelvertex.palatelog.R
+import com.prismpixelvertex.palatelog.core.notification.PalateNotificationManager
 import com.prismpixelvertex.palatelog.feature.dashboard.DashboardScreen
 import com.prismpixelvertex.palatelog.feature.dashboard.DashboardViewModel
 import com.prismpixelvertex.palatelog.feature.entry_editor.EntryEditorScreen
@@ -91,10 +93,34 @@ sealed class Screen(val route: String, @StringRes val titleRes: Int, val icon: I
 
 @Composable
 fun PalateLogNavGraph(
-    navController: NavHostController = rememberNavController()
+    navController: NavHostController = rememberNavController(),
+    initialTarget: String? = null
 ) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
+
+    LaunchedEffect(initialTarget) {
+        when (initialTarget) {
+            PalateNotificationManager.NAV_TARGET_SETTINGS -> {
+                navController.navigate(Screen.Settings.route) {
+                    popUpTo(navController.graph.findStartDestination().id) {
+                        saveState = true
+                    }
+                    launchSingleTop = true
+                    restoreState = true
+                }
+            }
+            PalateNotificationManager.NAV_TARGET_DASHBOARD -> {
+                navController.navigate(Screen.Dashboard.route) {
+                    popUpTo(navController.graph.findStartDestination().id) {
+                        saveState = true
+                    }
+                    launchSingleTop = true
+                    restoreState = true
+                }
+            }
+        }
+    }
 
     val bottomBarScreens = listOf(
         Screen.Dashboard,

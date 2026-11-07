@@ -67,6 +67,7 @@ class MainActivity : ComponentActivity() {
 
     private lateinit var updateHelper: InAppUpdateHelper
     private var debugUpdateReceiver: BroadcastReceiver? = null
+    private var notificationTargetScreen by mutableStateOf<String?>(null)
 
     private val updateLauncher = registerForActivityResult(
         ActivityResultContracts.StartIntentSenderForResult(),
@@ -76,6 +77,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        notificationTargetScreen = intent?.getStringExtra(com.prismpixelvertex.palatelog.core.notification.PalateNotificationManager.EXTRA_NAV_TARGET)
         enableEdgeToEdge()
 
         updateHelper = InAppUpdateHelper(applicationContext)
@@ -133,18 +135,30 @@ class MainActivity : ComponentActivity() {
                 }
 
                 LaunchedEffect(Unit) {
+                    val permissionsToRequest = mutableListOf<String>()
+
                     val fineLocationGranted = ContextCompat.checkSelfPermission(
                         this@MainActivity,
                         Manifest.permission.ACCESS_FINE_LOCATION
                     ) == PackageManager.PERMISSION_GRANTED
 
                     if (!fineLocationGranted) {
-                        permissionLauncher.launch(
-                            arrayOf(
-                                Manifest.permission.ACCESS_FINE_LOCATION,
-                                Manifest.permission.ACCESS_COARSE_LOCATION,
-                            )
-                        )
+                        permissionsToRequest.add(Manifest.permission.ACCESS_FINE_LOCATION)
+                        permissionsToRequest.add(Manifest.permission.ACCESS_COARSE_LOCATION)
+                    }
+
+                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                        val notificationGranted = ContextCompat.checkSelfPermission(
+                            this@MainActivity,
+                            Manifest.permission.POST_NOTIFICATIONS
+                        ) == PackageManager.PERMISSION_GRANTED
+                        if (!notificationGranted) {
+                            permissionsToRequest.add(Manifest.permission.POST_NOTIFICATIONS)
+                        }
+                    }
+
+                    if (permissionsToRequest.isNotEmpty()) {
+                        permissionLauncher.launch(permissionsToRequest.toTypedArray())
                     }
                 }
 
@@ -153,7 +167,7 @@ class MainActivity : ComponentActivity() {
                     color = MaterialTheme.colorScheme.background
                 ) {
                     Box(modifier = Modifier.fillMaxSize()) {
-                        PalateLogNavGraph()
+                        PalateLogNavGraph(initialTarget = notificationTargetScreen)
 
                         if (BuildConfig.DEBUG && showRestartDialog && isUpdateDownloaded) {
                             AlertDialog(
@@ -274,6 +288,12 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        notificationTargetScreen = intent.getStringExtra(com.prismpixelvertex.palatelog.core.notification.PalateNotificationManager.EXTRA_NAV_TARGET)
     }
 
     override fun onResume() {

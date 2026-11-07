@@ -17,6 +17,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.withContext
+import com.prismpixelvertex.palatelog.R
+import com.prismpixelvertex.palatelog.core.notification.PalateNotificationManager
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.io.File
@@ -37,7 +39,8 @@ class SyncRepository @Inject constructor(
     private val restaurantDao: RestaurantDao,
     private val visitDao: VisitDao,
     private val dishDao: DishFeedbackDao,
-    private val googleDriveSyncClient: GoogleDriveSyncClient
+    private val googleDriveSyncClient: GoogleDriveSyncClient,
+    private val notificationManager: PalateNotificationManager
 ) {
 
     private val json = Json {
@@ -209,6 +212,7 @@ class SyncRepository @Inject constructor(
             var mergedRemoteCount = 0
             var photosDownloadedCount = 0
             var photosUploadedCount = 0
+            val remotePayloads = mutableListOf<SyncPayload>()
 
             // 1. Download and merge all remote delta files from other family members
             val remoteFiles = googleDriveSyncClient.listRemoteSyncFiles(accessToken, folderId)
@@ -258,6 +262,7 @@ class SyncRepository @Inject constructor(
                     }
 
                     importPayload(remotePayload)
+                    remotePayloads.add(remotePayload)
                     mergedRemoteCount++
                 } catch (e: Exception) {
                     Log.e("PalateLog_Sync", "Error downloading or importing remote payload ${file.name}", e)
@@ -302,6 +307,54 @@ class SyncRepository @Inject constructor(
             val now = System.currentTimeMillis()
             setLastSyncTimestamp(now)
 
+            // Clear any previously active sync auth alert since sync was successful
+            notificationManager.clearSyncAuthAlert()
+
+            // If remote family updates arrived, dispatch a batched family sync digest
+            val allNewRestaurants = remotePayloads.flatMap { it.restaurants }.filter { !it.isDeleted }
+            val allNewVisits = remotePayloads.flatMap { it.visits }.filter { !it.isDeleted }
+            val allNewDishes = remotePayloads.flatMap { it.dishes }.filter { !it.isDeleted }
+
+            val totalUpdatesCount = allNewRestaurants.size + allNewVisits.size
+            if (totalUpdatesCount > 0) {
+                val memberNames = allNewVisits.mapNotNull { it.createdByMemberName.takeIf { name -> name.isNotBlank() } }.distinct()
+                val placeNames = allNewRestaurants.map { it.name }.distinct()
+
+                val authorName = when {
+                    memberNames.size == 1 -> memberNames.first()
+                    else -> null
+                }
+
+                val summary = if (authorName != null) {
+                    if (totalUpdatesCount == 1) {
+                        context.getString(R.string.notification_family_sync_single, authorName, totalUpdatesCount)
+                    } else {
+                        context.getString(R.string.notification_family_sync_plural, authorName, totalUpdatesCount)
+                    }
+                } else {
+                    if (totalUpdatesCount == 1) {
+                        context.getString(R.string.notification_family_sync_generic_single, totalUpdatesCount)
+                    } else {
+                        context.getString(R.string.notification_family_sync_generic_plural, totalUpdatesCount)
+                    }
+                }
+
+                val details = mutableListOf<String>()
+                for (place in placeNames.take(3)) {
+                    details.add("📍 $place")
+                }
+                for (dish in allNewDishes.take(3)) {
+                    val verdictIcon = when (dish.verdict) {
+                        "GO" -> "🟢"
+                        "NO_GO" -> "🔴"
+                        else -> "🟡"
+                    }
+                    details.add("$verdictIcon ${dish.dishName}")
+                }
+
+                notificationManager.postFamilySyncDigest(summary, details)
+            }
+
             val photoDetails = when {
                 photosUploadedCount > 0 && photosDownloadedCount > 0 -> ", $photosUploadedCount photos uploaded, $photosDownloadedCount downloaded"
                 photosUploadedCount > 0 -> ", $photosUploadedCount photos uploaded"
@@ -315,10 +368,22 @@ class SyncRepository @Inject constructor(
         } catch (e: GoogleAuthException) {
             Log.e("PalateLog_Sync", "GoogleAuthException during sync: ${e.message}", e)
             _syncStatus.value = SyncStatus.Error(e.message ?: "Google Auth required")
+            notificationManager.postSyncAuthAlert(e.message ?: "Google Auth required", isFolderPermissionDenied = false)
             throw e
         } catch (e: Exception) {
             Log.e("PalateLog_Sync", "Exception during sync: ${e.localizedMessage}", e)
             _syncStatus.value = SyncStatus.Error(e.localizedMessage ?: "Drive Sync failed")
+
+            val msg = e.message.orEmpty()
+            val isAuthOrPermissionError = msg.contains("401") || msg.contains("403") ||
+                msg.contains("AccessDenied", ignoreCase = true) ||
+                msg.contains("appNotAuthorizedToChild", ignoreCase = true) ||
+                msg.contains("insufficientFilePermissions", ignoreCase = true)
+
+            if (isAuthOrPermissionError) {
+                val isFolderDenied = msg.contains("403") || msg.contains("AccessDenied", ignoreCase = true) || msg.contains("appNotAuthorizedToChild", ignoreCase = true)
+                notificationManager.postSyncAuthAlert(msg, isFolderPermissionDenied = isFolderDenied)
+            }
             throw e
         }
     }

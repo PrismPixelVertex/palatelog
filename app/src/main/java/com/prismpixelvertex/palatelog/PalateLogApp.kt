@@ -15,6 +15,9 @@ class PalateLogApp : Application(), Configuration.Provider {
     @Inject
     lateinit var workerFactory: HiltWorkerFactory
 
+    @Inject
+    lateinit var notificationManager: com.prismpixelvertex.palatelog.core.notification.PalateNotificationManager
+
     override val workManagerConfiguration: Configuration
         get() = Configuration.Builder()
             .setWorkerFactory(workerFactory)
@@ -22,6 +25,12 @@ class PalateLogApp : Application(), Configuration.Provider {
 
     override fun onCreate() {
         super.onCreate()
+        try {
+            notificationManager.initChannels()
+        } catch (e: Exception) {
+            Log.e(TAG, "Notification channel initialization failed", e)
+        }
+
         try {
             com.mappls.sdk.maps.Mappls.getInstance(this)
             Log.d(TAG, "Mappls SDK initialized successfully")

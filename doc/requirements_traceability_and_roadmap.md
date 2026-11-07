@@ -18,6 +18,7 @@ This document maps all original user requirements against the current codebase i
 | **8** | Optionally store bill, price details | **100% Complete** ✅ | • `billAmount: Double` in `VisitEntryEntity`<br>• `price: Double` in `DishFeedbackEntity`<br>• Bill amount input in `EntryEditorScreen`<br>• Bill amount display in `VisitHistoryCard` (`RestaurantDetailScreen`) |
 | **9** | Store multiple visits to same restaurant for aggregated metrics | **100% Complete** ✅ | • `RestaurantEntity` 1-to-many `VisitEntryEntity`<br>• Total visits counter on `RestaurantCard`<br>• Visit history timeline on `RestaurantDetailScreen`<br>• Aggregated Dish Matrix showing cumulative verdicts across multiple visits |
 | **10** | Work offline (without internet access), two-way sync periodically or by user trigger | **100% Complete** ✅ | • 100% offline-first architecture via local Room SQLite DB<br>• `SyncWorker` (WorkManager periodic background sync)<br>• "Sync Now" button in `SettingsScreen`<br>• OpenStreetMap offline tile caching |
+| **11** | Non-intrusive smart notifications (sync health, family updates) | **100% Complete** ✅ | • `PalateNotificationManager` (`channel_sync_health`, `channel_family_sync`)<br>• Actionable OAuth & folder permission error alerts (HTTP 401/403)<br>• Silent family sync delta digest in `SyncRepository`<br>• `POST_NOTIFICATIONS` runtime permission on Android 13+ |
 | **UI 1** | Minimalist UI during data entry & pre-filling | **100% Complete** ✅ | • **3-Second Quick Regret Logger**: 1-tap GPS, 1-tap NO-GO verdict, quick tag chips ("Watery tea", "Soggy food", "Dirty restrooms"). Saves in 3s.<br>• **Pre-filling**: Selecting an existing restaurant in `EntryEditorScreen` auto-populates past dishes as instant selectable chips with past verdicts! |
 | **UI 2** | Map View with custom markers & navigation | **100% Complete** ✅ | • Interactive OpenStreetMap (OSMDroid) with custom color-coded pins (🟢 Go, 🔴 No-Go, 🟡 Caution)<br>• Bottom sheet drawer on pin tap with "Navigate in Google Maps" handoff |
 
@@ -55,8 +56,25 @@ Based on the gap analysis, here are the completed phases and recommended next st
 9. **Content-Aware Floating Scroll Indicators (Completed ✅)**:
    - Auto-fading circular down-arrow indicators on Explore and Restaurant Detail screens with 1-tap scroll down and bottom navigation bar inset protection.
 
-### Phase 3: Advanced Travel Features (Upcoming)
-10. **Highway Route Corridor Search**:
+### Phase 3A: Non-Intrusive Notifications & Sync Health (Completed ✅)
+10. **Actionable Sync & Auth Health Alerts (Completed ✅)**:
+    - High-utility, zero-noise notifications dispatched **strictly** for critical actionable errors (Google Drive OAuth token expiration or shared folder authorization revocation `HTTP 401/403`).
+    - Standard offline conditions and transient network dropouts remain completely silent.
+    - Automatically clears via `clearSyncAuthAlert()` upon successful sync recovery.
+11. **Family Sync Delta Digest (Completed ✅)**:
+    - Low-priority, batched summary notification when background `SyncWorker` fetches new dining logs or dish warnings from family members (e.g. *"Priya added a review for Nagarjuna: Must Try Biriyani, Avoid Chicken Fry"*).
+    - Deep-link intent routing from notifications directly to Settings (for auth) or Explore (for digests).
+
+### Phase 3B: Highway Co-pilot & On-Demand Dynamic Geofencing (Upcoming)
+12. **User-Controlled Highway Co-pilot (Quick Settings Tile & In-App Toggle)**:
+    - Dedicated Quick Settings Tile (`HighwayTileService`) allowing 1-tap activation when starting a highway road trip.
+    - Zero background tracking or battery drain when disabled; avoids perpetual 24/7 background location permission friction.
+13. **Dynamic 500 km Corridor Geofencing**:
+    - On Co-pilot activation, dynamically registers up to 100 geofences with Google Play Services `GeofencingClient` for saved highway stops within a 500 km radius.
+    - **Mandatory Default**: High-priority "Roadside Regret Ahead" proximity warning (500m prior) for `NO_GO` spots (e.g. "Terrible watery tea, dirty restrooms").
+    - **Customizable Preference**: Opt-in toggle to also alert for `GO` recommendations (e.g. "Clean Restrooms & Filter Coffee in 500m").
+    - **Clean Teardown**: Immediate geofence de-registration upon toggling Co-pilot OFF.
+
+#### Phase 3C: Travel Corridor Search & Planning
+14. **Highway Route Corridor Search**:
     - Allow entering an Origin and Destination (e.g. Bangalore to Chennai) to query all logged stops within 5-10 km along that highway corridor.
-11. **Proximity Regret Warning Notification (Optional Geofence)**:
-    - When driving within 200m of a restaurant previously marked **NO-GO 🔴**, pop up a friendly reminder: *"Heads up! You marked [Highway Tea Stall] as NO-GO (Terrible watery tea) on May 2024."*
