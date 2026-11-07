@@ -496,4 +496,18 @@
     <string name="camera_prepare_error">Error preparing capture: %1$s</string>
     <string name="camera_cd_switch">Switch camera</string>
     <string name="camera_cd_take_photo">Take photo</string>
+
+    <!-- Notifications & Channels -->
+    <string name="notification_channel_sync_health_name">Sync &amp; Account Health</string>
+    <string name="notification_channel_sync_health_desc">Actionable alerts when Google Drive authorization or family folder permissions need attention</string>
+    <string name="notification_channel_family_sync_name">Family Dining Updates</string>
+    <string name="notification_channel_family_sync_desc">Summary digests when family members add or update dining logs</string>
+    <string name="notification_sync_auth_title">PalateLog Sync Paused</string>
+    <string name="notification_sync_auth_expired_text">Google Drive authorization expired. Tap to reconnect and keep family logs in sync.</string>
+    <string name="notification_sync_permission_denied_text">Access to the family Google Drive folder was denied. Tap to review sync settings.</string>
+    <string name="notification_family_sync_title">Family Dining Updates 🍽️</string>
+    <string name="notification_family_sync_single">%1$s added %2$d new dining review</string>
+    <string name="notification_family_sync_plural">%1$s added %2$d new dining reviews</string>
+    <string name="notification_family_sync_generic_single">Family added %1$d new dining review</string>
+    <string name="notification_family_sync_generic_plural">Family added %1$d new dining reviews</string>
 </resources>

@@ -55,8 +55,25 @@ Based on the gap analysis, here are the completed phases and recommended next st
 9. **Content-Aware Floating Scroll Indicators (Completed ✅)**:
    - Auto-fading circular down-arrow indicators on Explore and Restaurant Detail screens with 1-tap scroll down and bottom navigation bar inset protection.
 
-### Phase 3: Advanced Travel Features (Upcoming)
-10. **Highway Route Corridor Search**:
+### Phase 3: Smart Notifications & Highway Travel Co-pilot (Upcoming)
+
+#### Phase 3A: Non-Intrusive Notifications & Sync Health
+10. **Actionable Sync & Auth Health Alerts**:
+    - High-utility, zero-noise notifications dispatched **strictly** for critical actionable errors (Google Drive OAuth token expiration or shared folder authorization revocation `HTTP 401/403`).
+    - Standard offline conditions and transient network dropouts remain completely silent.
+11. **Family Sync Delta Digest**:
+    - Low-priority, batched summary notification when background `SyncWorker` fetches new dining logs or dish warnings from family members (e.g. *"Priya added a review for Nagarjuna: Must Try Biriyani, Avoid Chicken Fry"*).
+
+#### Phase 3B: Highway Co-pilot & On-Demand Dynamic Geofencing
+12. **User-Controlled Highway Co-pilot (Quick Settings Tile & In-App Toggle)**:
+    - Dedicated Quick Settings Tile (`HighwayTileService`) allowing 1-tap activation when starting a highway road trip.
+    - Zero background tracking or battery drain when disabled; avoids perpetual 24/7 background location permission friction.
+13. **Dynamic 500 km Corridor Geofencing**:
+    - On Co-pilot activation, dynamically registers up to 100 geofences with Google Play Services `GeofencingClient` for saved highway stops within a 500 km radius.
+    - **Mandatory Default**: High-priority "Roadside Regret Ahead" proximity warning (500m prior) for `NO_GO` spots (e.g. "Terrible watery tea, dirty restrooms").
+    - **Customizable Preference**: Opt-in toggle to also alert for `GO` recommendations (e.g. "Clean Restrooms & Filter Coffee in 500m").
+    - **Clean Teardown**: Immediate geofence de-registration upon toggling Co-pilot OFF.
+
+#### Phase 3C: Travel Corridor Search & Planning
+14. **Highway Route Corridor Search**:
     - Allow entering an Origin and Destination (e.g. Bangalore to Chennai) to query all logged stops within 5-10 km along that highway corridor.
-11. **Proximity Regret Warning Notification (Optional Geofence)**:
-    - When driving within 200m of a restaurant previously marked **NO-GO 🔴**, pop up a friendly reminder: *"Heads up! You marked [Highway Tea Stall] as NO-GO (Terrible watery tea) on May 2024."*

@@ -5,6 +5,25 @@ All notable changes to PalateLog will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.22] - 2026-11-07
+
+### Added & Enhanced (Phase 3A: Smart Notifications & Sync Health Alerts)
+- **Centralized Notification Architecture (`PalateNotificationManager`)**:
+  - Implemented [`PalateNotificationManager.kt`](app/src/main/java/com/prismpixelvertex/palatelog/core/notification/PalateNotificationManager.kt) to manage Android notification channels and dispatch typed, non-intrusive notifications.
+  - Initialized notification channels (`channel_sync_health`, `channel_family_sync`) in [`PalateLogApp.kt`](app/src/main/java/com/prismpixelvertex/palatelog/PalateLogApp.kt) `onCreate()`.
+  - Added dedicated monochrome notification icon vector drawable `ic_notification_restaurant.xml`.
+- **Actionable Sync Health Alerts**:
+  - Wired into [`SyncRepository.kt`](app/src/main/java/com/prismpixelvertex/palatelog/core/sync/SyncRepository.kt) to alert users strictly when actionable human intervention is required (e.g. Google Drive OAuth expiration or revoked family sync folder permissions `HTTP 401/403`).
+  - Standard offline states and transient network dropouts remain completely silent, maintaining strict zero-noise discipline.
+  - Automatically clears the health notification via `clearSyncAuthAlert()` as soon as sync succeeds.
+- **Family Sync Delta Digest**:
+  - Aggregates incoming remote JSON deltas from other family devices in [`SyncRepository.kt`](app/src/main/java/com/prismpixelvertex/palatelog/core/sync/SyncRepository.kt).
+  - Emits a low-priority, batched summary notification (e.g., *"Priya added 2 new dining reviews"*) with expandable restaurant & dish highlights.
+- **Deep-Link Intent Routing & Android 13+ Runtime Permissions**:
+  - Added `<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />` in `AndroidManifest.xml`.
+  - Added runtime notification permission check alongside location permissions in [`MainActivity.kt`](app/src/main/java/com/prismpixelvertex/palatelog/MainActivity.kt) on Android 13+ (API 33+).
+  - Tapping the sync health notification deep-links directly to Settings, while tapping the family digest navigates to Explore (`PalateLogNavGraph.kt`).
+
 ## [1.2.21] - 2026-11-02
 
 ### Improved & Optimized (Explore Screen Location Caching & Distance Sorting)

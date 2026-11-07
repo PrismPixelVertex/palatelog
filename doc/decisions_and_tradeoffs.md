@@ -232,3 +232,45 @@ When capturing bill receipts, menu cards, or food dish photos in the visit edito
   - **Universal OEM Compatibility**: Leverages Google's CameraX OEM HAL quirks database across all major manufacturers.
 * **Trade-off**: Net download size increase of ~250 KB post-R8 ProGuard optimization.
 
+---
+
+## ADR 013: Notification Strategy, Anti-Patterns & User-Controlled Highway Co-pilot Geofencing
+
+### Context
+Notifications can be either a high-leverage utility or an intrusive annoyance that prompts immediate app uninstallation. PalateLog is an offline-first dining memory journal and regret logger, not an engagement-driven social network or delivery aggregator. We evaluated whether notifications have a legitimate role in the app, explicitly identified anti-patterns to avoid, and designed an architectural blueprint for high-utility, zero-spam notifications.
+
+### Explicit Anti-Patterns (Rejected)
+* **Rejection of Engagement / Inactivity Nags**: No *"You haven't logged food in a while"* or *"Hungry? Check saved spots"* notifications. These violate user trust and conflict with offline-first utility principles.
+* **Rejection of Mealtime Spam**: No automated lunch or dinner notifications.
+* **Rejection of Invasive Process/App Tracking**: No accessibility service or usage stats sniffing to detect when food delivery apps (Zomato/Swiggy) are opened.
+* **Rejection of Passive Background Dwell Detection**: No constant background GPS polling to detect when a user sits in a restaurant, which burns battery and yields high false-positive rates (e.g. traffic jams or adjacent shops).
+* **Rejection of Transient Error & Success Noise**: No notifications for expected offline states (e.g. temporary network unavailability during sync) and no spammy "Sync successful" notifications.
+
+### Decisions & Multi-Phase Implementation Plan
+
+#### Phase 1: Actionable Sync Health & Family Delta Digest
+1. **Critical Auth & Permission Health Alerts Only**:
+   - Notifications are dispatched **only** for actionable, blocking errors—specifically expired/revoked Google OAuth tokens or lost permissions on the shared Google Drive folder (`HTTP 401/403`).
+   - Network dropouts and offline states are handled silently as standard operating conditions in `SyncWorker`.
+2. **Family Sync Delta Digest**:
+   - When periodic background sync successfully integrates newly added entries from family members, a low-priority, batched summary notification informs the user (e.g. *"Priya added a review for Nagarjuna: Must Try Biriyani, Avoid Chicken Fry"*).
+
+#### Phase 2: Combined Highway Co-pilot with On-Demand Geofencing
+1. **User-Controlled Trip Session (Quick Settings Tile & In-App Toggle)**:
+   - Rather than requesting continuous `ACCESS_BACKGROUND_LOCATION` 24/7 (which strains battery and triggers restrictive Google Play background location policies), highway monitoring is strictly on-demand.
+   - Users activate "Highway Co-pilot" via an Android Quick Settings Tile (`HighwayTileService`) or an in-app toggle when embarking on a road trip.
+2. **Dynamic 500 km Geofence Registration**:
+   - Upon activation, PalateLog queries local Room SQLite for saved highway stops (`highwayOrRoute IS NOT NULL`) within a 500 km radius of the current GPS location.
+   - Registers up to 100 geofences with Android's low-power `GeofencingClient` (`LocationServices.getGeofencingClient`):
+     - **Mandatory Default**: `NO_GO` spots trigger a high-priority "Roadside Regret Ahead" warning (500m before the location) detailing reasons to avoid (e.g. "Watery tea, dirty restrooms").
+     - **User Option**: Opt-in toggle to also alert for `GO` spots (e.g. "Clean Restrooms & Filter Coffee ahead in 500m") for trip planning.
+3. **Clean Teardown & De-Registration**:
+   - Toggling the Quick Settings Tile or in-app switch to OFF immediately de-registers all geofences (`removeGeofences`) and terminates the foreground service, ensuring zero battery consumption when not driving.
+
+### Decision & Trade-offs
+* **Benefits**:
+  - **Full User Control**: No unexpected background tracking or battery drain while at home or work.
+  - **Google Play Compliance**: Avoids the need for perpetual 24/7 background location permissions by tying location awareness to an active, user-initiated trip session.
+  - **Maximum Utility**: Delivers the anti-regret warning at the exact moment of highway decision-making.
+* **Trade-off**: Requires the user to remember to tap the Quick Settings tile when starting a highway drive (which can be aided by an optional Bluetooth car-connect prompt in future iterations).
+
