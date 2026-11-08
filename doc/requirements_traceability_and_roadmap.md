@@ -65,16 +65,18 @@ Based on the gap analysis, here are the completed phases and recommended next st
     - Low-priority, batched summary notification when background `SyncWorker` fetches new dining logs or dish warnings from family members (e.g. *"Priya added a review for Nagarjuna: Must Try Biriyani, Avoid Chicken Fry"*).
     - Deep-link intent routing from notifications directly to Settings (for auth) or Explore (for digests).
 
-### Phase 3B: Highway Co-pilot & On-Demand Dynamic Geofencing (Upcoming)
-12. **User-Controlled Highway Co-pilot (Quick Settings Tile & In-App Toggle)**:
-    - Dedicated Quick Settings Tile (`HighwayTileService`) allowing 1-tap activation when starting a highway road trip.
+### Phase 3B: Palate Radar & On-Demand Dynamic Geofencing (In Progress 🚀)
+12. **User-Controlled Palate Radar (Quick Settings Tile & In-App Toggle)**:
+    - Dedicated Quick Settings Tile (`PalateRadarTileService`) allowing 1-tap activation when starting a highway road trip.
     - Zero background tracking or battery drain when disabled; avoids perpetual 24/7 background location permission friction.
 13. **Dynamic 500 km Corridor Geofencing**:
-    - On Co-pilot activation, dynamically registers up to 100 geofences with Google Play Services `GeofencingClient` for saved highway stops within a 500 km radius.
+    - On Radar activation, dynamically registers up to 100 geofences with Google Play Services `GeofencingClient` for saved highway stops within a 500 km radius.
     - **Mandatory Default**: High-priority "Roadside Regret Ahead" proximity warning (500m prior) for `NO_GO` spots (e.g. "Terrible watery tea, dirty restrooms").
     - **Customizable Preference**: Opt-in toggle to also alert for `GO` recommendations (e.g. "Clean Restrooms & Filter Coffee in 500m").
-    - **Clean Teardown**: Immediate geofence de-registration upon toggling Co-pilot OFF.
+    - **Clean Teardown**: Immediate geofence de-registration upon toggling Radar OFF.
+    - **Google Play Compliance**: Complete Play Store justifications, prominent in-app disclosure, data safety declarations, and reviewer video script documented in `doc/play_store_location_policy_justification.md`.
 
 #### Phase 3C: Travel Corridor Search & Planning
 14. **Highway Route Corridor Search**:
     - Allow entering an Origin and Destination (e.g. Bangalore to Chennai) to query all logged stops within 5-10 km along that highway corridor.
+

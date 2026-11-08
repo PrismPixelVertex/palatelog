@@ -9,7 +9,8 @@ enum class HelpTopicKey(val id: String, @StringRes val chipLabelRes: Int) {
     VISIT_LOG("visit_log", R.string.help_chip_visit_log),
     SYNC("sync", R.string.help_chip_sync),
     MAP_EXPLORE("map_explore", R.string.help_chip_map),
-    PRIVACY("privacy", R.string.help_chip_privacy);
+    PRIVACY("privacy", R.string.help_chip_privacy),
+    RADAR("radar", R.string.help_chip_radar);
 
     companion object {
         fun fromId(id: String?): HelpTopicKey? {

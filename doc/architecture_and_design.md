@@ -360,50 +360,54 @@ No UI changes are required on the Settings screen!
 
 ---
 
-## 7. Notification Architecture & Highway Co-pilot Specification
+## 7. Notification Architecture & Palate Radar Specification (v1.2.23)
 
 PalateLog adopts an intentional, utility-first notification philosophy. As an offline-first dining journal and regret logger, notifications are reserved strictly for high-leverage user moments and critical sync health.
 
 ### A. Notification Channels & Categories
 
-1. **`channel_highway_alerts` (High Importance, Sound/Vibration)**:
+1. **`channel_radar_alerts` (High Importance, Sound/Vibration)**:
    - Proximity warnings when approaching logged roadside regrets (`NO_GO`) or favorite stops (`GO`) during active highway drives.
 2. **`channel_family_sync` (Low Importance, Silent)**:
    - Batched digest summaries when background `SyncWorker` pulls new dining reviews or dish verdicts added by family members.
 3. **`channel_sync_health` (Default Importance)**:
    - Actionable alerts dispatched **only** when user intervention is required (e.g. Google Drive OAuth expiration or revoked folder permissions). Standard offline states and transient network drops remain completely silent.
-4. **`channel_copilot_service` (Low Importance, Ongoing)**:
-   - Persistent foreground notification while Highway Co-pilot is actively running.
+4. **`channel_radar_service` (Low Importance, Ongoing)**:
+   - Persistent foreground notification while Palate Radar is actively scanning on the road.
 
-### B. Highway Co-pilot: On-Demand Dynamic Geofencing Lifecycle
+### B. Palate Radar: On-Demand Dynamic Geofencing Lifecycle
 
-Rather than maintaining intrusive 24/7 background location tracking, Highway Co-pilot operates as a user-initiated trip session.
+Rather than maintaining intrusive 24/7 background location tracking, Palate Radar operates as a user-initiated trip session.
 
 ```mermaid
 sequenceDiagram
     autonumber
     actor User as Driver / User
-    participant QS as Quick Settings Tile
-    participant Copilot as HighwayCopilotService
+    participant QS as Quick Settings Tile (PalateRadarTileService)
+    participant UI as Dashboard (Palate Radar Card)
+    participant Radar as PalateRadarService
     participant Room as Room SQLite (RestaurantDao)
     participant Geo as Play Services GeofencingClient
-    participant Receiver as GeofenceBroadcastReceiver
+    participant Receiver as PalateRadarReceiver
 
-    User->>QS: Tap 'Highway Co-pilot' (Turn ON)
-    QS->>Copilot: Start Foreground Service
-    Copilot->>Room: Query highway stops within 500 km radius
-    Room-->>Copilot: Return up to 100 candidate stops (NO_GO & optional GO)
-    Copilot->>Geo: Register geofences (500m radius per stop)
+    User->>QS: Tap 'Palate Radar' (or toggle on Dashboard)
+    QS->>Radar: Start Foreground Service
+    Radar->>Room: Query highway stops within 500 km radius
+    Room-->>Radar: Return up to 100 candidate stops (NO_GO & optional GO)
+    Radar->>Geo: Register geofences (500m radius per stop)
     
     Note over User,Geo: Driving on Highway (e.g. NH44)
     
     Geo->>Receiver: Trigger GEOFENCE_TRANSITION_ENTER (Sri Krishna Dhaba)
     Receiver->>User: High-Priority Heads-up Notification: "🔴 Avoid: Watery tea, dirty restrooms"
     
-    User->>QS: Tap 'Highway Co-pilot' (Turn OFF)
-    QS->>Copilot: Stop Service
-    Copilot->>Geo: removeGeofences() (Clean teardown)
-    Note over Copilot,Geo: Zero background tracking & zero battery consumption
+    User->>QS: Tap 'Palate Radar' (Turn OFF)
+    QS->>Radar: Stop Service
+    Radar->>Geo: removeGeofences() (Clean teardown)
+    Note over Radar,Geo: Zero background tracking & zero battery consumption
 ```
+
+For complete Google Play Store declarations, policy justifications, in-app prominent disclosure copy, and reviewer video scripts, see [play_store_location_policy_justification.md](play_store_location_policy_justification.md).
+
 
 

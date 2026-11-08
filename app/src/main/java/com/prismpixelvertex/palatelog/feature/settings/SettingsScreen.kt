@@ -2,6 +2,7 @@ package com.prismpixelvertex.palatelog.feature.settings
 
 import android.accounts.AccountManager
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.util.Log
@@ -48,7 +49,10 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.People
+import androidx.compose.material.icons.filled.Radar
 import androidx.compose.material.icons.filled.Sync
+import androidx.core.content.edit
+import androidx.compose.material3.Switch
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -619,7 +623,147 @@ fun SettingsScreen(
                 }
             }
 
-            // Section 3: Backup & Export
+            // Section 3: Palate Radar (Highway Trip Settings)
+            val prefs = remember { context.getSharedPreferences("palatelog_prefs", Context.MODE_PRIVATE) }
+            var includeGoRecommendations by remember {
+                mutableStateOf(prefs.getBoolean("radar_include_go", false))
+            }
+
+            Card(
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Radar, contentDescription = null, tint = AmberPrimary)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = stringResource(R.string.settings_section_radar),
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+
+                    Text(
+                        text = stringResource(R.string.settings_radar_desc),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                            .padding(horizontal = 12.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = stringResource(R.string.settings_radar_include_go_title),
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                            Text(
+                                text = stringResource(R.string.settings_radar_include_go_desc),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Switch(
+                            checked = includeGoRecommendations,
+                            onCheckedChange = { isChecked ->
+                                includeGoRecommendations = isChecked
+                                prefs.edit { putBoolean("radar_include_go", isChecked) }
+                            }
+                        )
+                    }
+
+                    Text(
+                        text = stringResource(R.string.settings_radar_tile_tip),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    var showRadarDisclosureDialog by remember { mutableStateOf(false) }
+
+                    if (showRadarDisclosureDialog) {
+                        val resetToastMsg = stringResource(R.string.settings_radar_disclosure_reset_toast)
+                        AlertDialog(
+                            onDismissRequest = { showRadarDisclosureDialog = false },
+                            icon = {
+                                Icon(
+                                    imageVector = Icons.Default.Radar,
+                                    contentDescription = null,
+                                    tint = AmberPrimary,
+                                    modifier = Modifier.size(32.dp)
+                                )
+                            },
+                            title = {
+                                Text(
+                                    text = stringResource(R.string.radar_disclosure_title),
+                                    style = MaterialTheme.typography.titleLarge,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            },
+                            text = {
+                                Text(
+                                    text = stringResource(R.string.radar_disclosure_message),
+                                    style = MaterialTheme.typography.bodyMedium
+                                )
+                            },
+                            confirmButton = {
+                                Button(
+                                    onClick = { showRadarDisclosureDialog = false },
+                                    colors = ButtonDefaults.buttonColors(containerColor = AmberPrimary)
+                                ) {
+                                    Text(stringResource(R.string.action_done), fontWeight = FontWeight.Bold)
+                                }
+                            },
+                            dismissButton = {
+                                TextButton(
+                                    onClick = {
+                                        prefs.edit { putBoolean("radar_disclosure_accepted", false) }
+                                        showRadarDisclosureDialog = false
+                                        Toast.makeText(
+                                            context,
+                                            resetToastMsg,
+                                            Toast.LENGTH_LONG
+                                        ).show()
+                                    }
+                                ) {
+                                    Text(
+                                        stringResource(R.string.settings_radar_btn_reset_disclosure),
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                }
+                            },
+                            shape = RoundedCornerShape(16.dp)
+                        )
+                    }
+
+                    OutlinedButton(
+                        onClick = { showRadarDisclosureDialog = true },
+                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Icon(Icons.Default.Info, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(stringResource(R.string.settings_radar_btn_review_disclosure))
+                    }
+                }
+            }
+
+            // Section 4: Backup & Export
             Card(
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),

@@ -2,8 +2,10 @@ package com.prismpixelvertex.palatelog.feature.dashboard
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.ui.draw.rotate
@@ -39,8 +41,16 @@ import androidx.compose.material.icons.filled.Directions
 import androidx.compose.material.icons.filled.FlashOn
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.NearMe
+import androidx.compose.material.icons.filled.Radar
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.Search
+import android.Manifest
+import android.content.Context
+import android.content.pm.PackageManager
+import android.widget.Toast
+import androidx.core.content.ContextCompat
+import androidx.core.content.edit
+import com.prismpixelvertex.palatelog.core.service.PalateRadarService
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -313,6 +323,15 @@ fun DashboardScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 8.dp)
+            )
+
+            // Palate Radar Highway Trip Card (Option A: Collapsible Banner)
+            PalateRadarCard(
+                onNavigateToHelpGuide = onNavigateToHelpGuide,
+                isListScrolling = listState.isScrollInProgress,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 4.dp)
             )
 
             // Filter Chips Bar
@@ -702,3 +721,273 @@ private fun RestaurantCard(
         }
     }
 }
+
+@Composable
+private fun PalateRadarCard(
+    onNavigateToHelpGuide: (HelpTopicKey?) -> Unit,
+    isListScrolling: Boolean,
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+    val isRadarActive by PalateRadarService.isRadarActive.collectAsState()
+    val activeStopCount by PalateRadarService.activeStopCount.collectAsState()
+    val prefs = remember { context.getSharedPreferences("palatelog_prefs", Context.MODE_PRIVATE) }
+    var isExpanded by remember { mutableStateOf(false) }
+    var showDisclosureDialog by remember { mutableStateOf(false) }
+    val locationRequiredMsg = stringResource(R.string.radar_permission_location_required)
+
+    // Auto-collapse when user scrolls the restaurant list
+    LaunchedEffect(isListScrolling) {
+        if (isListScrolling && isExpanded) {
+            isExpanded = false
+        }
+    }
+
+    if (showDisclosureDialog) {
+        AlertDialog(
+            onDismissRequest = { showDisclosureDialog = false },
+            icon = {
+                Icon(
+                    imageVector = Icons.Default.Radar,
+                    contentDescription = null,
+                    tint = AmberPrimary,
+                    modifier = Modifier.size(Dimens.IconSizeLarge)
+                )
+            },
+            title = {
+                Text(
+                    text = stringResource(R.string.radar_disclosure_title),
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Text(
+                    text = stringResource(R.string.radar_disclosure_message),
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        prefs.edit { putBoolean("radar_disclosure_accepted", true) }
+                        showDisclosureDialog = false
+                        PalateRadarService.startRadar(context)
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = AmberPrimary)
+                ) {
+                    Text(
+                        text = stringResource(R.string.radar_disclosure_confirm),
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDisclosureDialog = false }) {
+                    Text(
+                        text = stringResource(R.string.radar_disclosure_dismiss),
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+            },
+            shape = RoundedCornerShape(Dimens.RadiusDialog)
+        )
+    }
+
+    Card(
+        shape = RoundedCornerShape(14.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isRadarActive) {
+                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.5f)
+            } else {
+                MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
+            }
+        ),
+        border = if (isRadarActive) {
+            BorderStroke(1.dp, AmberPrimary.copy(alpha = 0.8f))
+        } else {
+            BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
+        },
+        modifier = modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp)
+        ) {
+            // Collapsed Header Row (40-44dp high)
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { isExpanded = !isExpanded },
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Radar,
+                        contentDescription = null,
+                        tint = if (isRadarActive) AmberPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Text(
+                        text = stringResource(R.string.radar_dashboard_card_title),
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Surface(
+                        shape = RoundedCornerShape(6.dp),
+                        color = if (isRadarActive) {
+                            VerdictGoGreen.copy(alpha = 0.15f)
+                        } else {
+                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f)
+                        }
+                    ) {
+                        Text(
+                            text = if (isRadarActive) {
+                                "${stringResource(R.string.radar_tile_state_active).uppercase()} ($activeStopCount)"
+                            } else {
+                                stringResource(R.string.radar_tile_state_inactive).uppercase()
+                            },
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = if (isRadarActive) VerdictGoGreen else MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                        )
+                    }
+                }
+
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    if (isRadarActive) {
+                        Button(
+                            onClick = { PalateRadarService.stopRadar(context) },
+                            colors = ButtonDefaults.buttonColors(containerColor = VerdictNoGoRed),
+                            shape = RoundedCornerShape(8.dp),
+                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                            modifier = Modifier.height(32.dp)
+                        ) {
+                            Text(
+                                text = stringResource(R.string.radar_dashboard_btn_stop_short),
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
+                        }
+                    } else {
+                        Button(
+                            onClick = {
+                                val fineLocationGranted = ContextCompat.checkSelfPermission(
+                                    context,
+                                    Manifest.permission.ACCESS_FINE_LOCATION
+                                ) == PackageManager.PERMISSION_GRANTED
+
+                                if (!fineLocationGranted) {
+                                    Toast.makeText(
+                                        context,
+                                        locationRequiredMsg,
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                    return@Button
+                                }
+
+                                val isAccepted = prefs.getBoolean("radar_disclosure_accepted", false)
+                                if (!isAccepted) {
+                                    showDisclosureDialog = true
+                                } else {
+                                    PalateRadarService.startRadar(context)
+                                }
+                            },
+                            colors = ButtonDefaults.buttonColors(containerColor = AmberPrimary),
+                            shape = RoundedCornerShape(8.dp),
+                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 4.dp),
+                            modifier = Modifier.height(32.dp)
+                        ) {
+                            Text(
+                                text = stringResource(R.string.radar_dashboard_btn_start_short),
+                                style = MaterialTheme.typography.labelSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
+                        }
+                    }
+
+                    IconButton(
+                        onClick = { isExpanded = !isExpanded },
+                        modifier = Modifier.size(28.dp)
+                    ) {
+                        val rotation by animateFloatAsState(
+                            targetValue = if (isExpanded) 180f else 0f,
+                            label = "radar_chevron"
+                        )
+                        Icon(
+                            imageVector = Icons.Default.KeyboardArrowDown,
+                            contentDescription = stringResource(
+                                if (isExpanded) R.string.radar_dashboard_collapse else R.string.radar_dashboard_expand
+                            ),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier
+                                .size(18.dp)
+                                .rotate(rotation)
+                        )
+                    }
+                }
+            }
+
+            // Expanded Drawer Details
+            AnimatedVisibility(
+                visible = isExpanded,
+                enter = expandVertically() + fadeIn(),
+                exit = shrinkVertically() + fadeOut()
+            ) {
+                Column(
+                    modifier = Modifier.padding(top = 8.dp),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Text(
+                        text = if (isRadarActive) {
+                            stringResource(R.string.radar_dashboard_card_active_desc, activeStopCount)
+                        } else {
+                            stringResource(R.string.radar_dashboard_card_inactive_desc)
+                        },
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.End,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+
+                        TextButton(
+                            onClick = { onNavigateToHelpGuide(HelpTopicKey.RADAR) },
+                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+                            modifier = Modifier.height(28.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.HelpOutline,
+                                contentDescription = null,
+                                tint = AmberPrimary,
+                                modifier = Modifier.size(14.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = stringResource(R.string.help_title),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = AmberPrimary,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+

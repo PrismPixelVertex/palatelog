@@ -5,6 +5,10 @@
     <!-- Location for GPS tagging and distance queries -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <!-- Background Location & Foreground Service for on-demand Palate Radar highway scanning -->
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
 
     <!-- Camera for in-app dish & bill photo capture via CameraX -->
     <uses-permission android:name="android.permission.CAMERA" />
@@ -79,6 +83,33 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths" />
         </provider>
+
+        <!-- Palate Radar Location Foreground Service -->
+        <service
+            android:name=".core.service.PalateRadarService"
+            android:exported="false"
+            android:foregroundServiceType="location" />
+
+        <!-- Palate Radar Quick Settings Tile -->
+        <service
+            android:name=".core.service.PalateRadarTileService"
+            android:exported="true"
+            android:icon="@drawable/ic_notification_restaurant"
+            android:label="@string/radar_tile_label"
+            android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter>
+                <action android:name="android.service.quicksettings.action.QS_TILE" />
+            </intent-filter>
+        </service>
+
+        <!-- Palate Radar Geofence Broadcast Receiver -->
+        <receiver
+            android:name=".core.radar.PalateRadarReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.prismpixelvertex.palatelog.ACTION_RADAR_GEOFENCE" />
+            </intent-filter>
+        </receiver>
 
     </application>
 

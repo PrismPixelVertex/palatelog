@@ -42,6 +42,7 @@ import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Map
+import androidx.compose.material.icons.filled.Radar
 import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Card
@@ -170,6 +171,15 @@ fun HelpGuideScreen(
                 icon = Icons.Default.Lock,
                 iconColor = Color(0xFF64748B),
                 iconBgColor = Color(0xFF64748B).copy(alpha = 0.15f)
+            ),
+            HelpSectionItem(
+                key = HelpTopicKey.RADAR,
+                titleRes = R.string.help_card_radar_title,
+                subtitleRes = R.string.help_card_radar_subtitle,
+                categoryTagRes = R.string.help_tag_radar,
+                icon = Icons.Default.Radar,
+                iconColor = Color(0xFF0284C7),
+                iconBgColor = Color(0xFF0284C7).copy(alpha = 0.15f)
             )
         )
     }
@@ -401,6 +411,7 @@ fun HelpGuideScreen(
                                             HelpTopicKey.SYNC -> SyncTopicContent()
                                             HelpTopicKey.MAP_EXPLORE -> MapExploreTopicContent()
                                             HelpTopicKey.PRIVACY -> PrivacyTopicContent()
+                                            HelpTopicKey.RADAR -> RadarTopicContent()
                                         }
                                     }
                                 }
@@ -814,5 +825,20 @@ private fun PrivacyTopicContent() {
             Text(stringResource(R.string.help_privacy_conflict_point), style = MaterialTheme.typography.bodySmall)
             Text(stringResource(R.string.help_privacy_offline_point), style = MaterialTheme.typography.bodySmall)
         }
+    }
+}
+
+// 7. PALATE RADAR TOPIC CONTENT (Highway Proximity & Geofencing)
+@Composable
+private fun RadarTopicContent() {
+    Column(verticalArrangement = Arrangement.spacedBy(Dimens.SpacingMedium)) {
+        Text(
+            text = stringResource(R.string.help_radar_intro),
+            style = MaterialTheme.typography.bodyMedium
+        )
+        Text(
+            text = stringResource(R.string.help_radar_points),
+            style = MaterialTheme.typography.bodySmall
+        )
     }
 }

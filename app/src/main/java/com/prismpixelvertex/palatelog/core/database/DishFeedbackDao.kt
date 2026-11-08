@@ -13,6 +13,9 @@ interface DishFeedbackDao {
     @Query("SELECT * FROM dish_feedbacks WHERE restaurantId = :restaurantId AND isDeleted = 0 ORDER BY updatedAt DESC")
     fun getDishesForRestaurant(restaurantId: String): Flow<List<DishFeedbackEntity>>
 
+    @Query("SELECT * FROM dish_feedbacks WHERE restaurantId = :restaurantId AND isDeleted = 0")
+    suspend fun getDishesForRestaurantSync(restaurantId: String): List<DishFeedbackEntity>
+
     @Query("SELECT * FROM dish_feedbacks WHERE isDeleted = 0 ORDER BY updatedAt DESC")
     fun getAllDishes(): Flow<List<DishFeedbackEntity>>
 

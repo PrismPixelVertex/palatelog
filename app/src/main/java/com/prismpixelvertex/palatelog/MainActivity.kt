@@ -68,6 +68,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var updateHelper: InAppUpdateHelper
     private var debugUpdateReceiver: BroadcastReceiver? = null
     private var notificationTargetScreen by mutableStateOf<String?>(null)
+    private var notificationRestaurantId by mutableStateOf<String?>(null)
 
     private val updateLauncher = registerForActivityResult(
         ActivityResultContracts.StartIntentSenderForResult(),
@@ -77,7 +78,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        notificationTargetScreen = intent?.getStringExtra(com.prismpixelvertex.palatelog.core.notification.PalateNotificationManager.EXTRA_NAV_TARGET)
+        handleNotificationIntent(intent)
         enableEdgeToEdge()
 
         updateHelper = InAppUpdateHelper(applicationContext)
@@ -167,7 +168,10 @@ class MainActivity : ComponentActivity() {
                     color = MaterialTheme.colorScheme.background
                 ) {
                     Box(modifier = Modifier.fillMaxSize()) {
-                        PalateLogNavGraph(initialTarget = notificationTargetScreen)
+                        PalateLogNavGraph(
+                            initialTarget = notificationTargetScreen,
+                            initialRestaurantId = notificationRestaurantId
+                        )
 
                         if (BuildConfig.DEBUG && showRestartDialog && isUpdateDownloaded) {
                             AlertDialog(
@@ -293,7 +297,16 @@ class MainActivity : ComponentActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
+        handleNotificationIntent(intent)
+    }
+
+    private fun handleNotificationIntent(intent: Intent?) {
+        if (intent == null) return
+        if (intent.action == com.prismpixelvertex.palatelog.core.notification.PalateNotificationManager.ACTION_STOP_RADAR) {
+            com.prismpixelvertex.palatelog.core.service.PalateRadarService.stopRadar(this)
+        }
         notificationTargetScreen = intent.getStringExtra(com.prismpixelvertex.palatelog.core.notification.PalateNotificationManager.EXTRA_NAV_TARGET)
+        notificationRestaurantId = intent.getStringExtra(com.prismpixelvertex.palatelog.core.notification.PalateNotificationManager.EXTRA_RESTAURANT_ID)
     }
 
     override fun onResume() {
