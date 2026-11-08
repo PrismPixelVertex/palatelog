@@ -43,6 +43,15 @@ interface RestaurantDao {
         maxLng: Double
     ): List<RestaurantEntity>
 
+    @Query("""
+        SELECT * FROM restaurants
+        WHERE isDeleted = 0
+          AND latitude IS NOT NULL
+          AND longitude IS NOT NULL
+          AND (latitude != 0.0 OR longitude != 0.0)
+    """)
+    suspend fun getAllRestaurantsWithCoordinates(): List<RestaurantEntity>
+
     @Query("SELECT * FROM restaurants WHERE updatedAt > :sinceTimestamp")
     suspend fun getModifiedSince(sinceTimestamp: Long): List<RestaurantEntity>
 

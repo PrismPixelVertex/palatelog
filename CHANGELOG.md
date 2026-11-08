@@ -5,6 +5,35 @@ All notable changes to PalateLog will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.23] - 2026-11-08
+
+### Added & Enhanced (Phase 3B: Palate Radar & On-Demand Dynamic Geofencing)
+- **On-Demand Highway Proximity Radar (`PalateRadarService`)**:
+  - Implemented `PalateRadarService.kt` (`app/src/main/java/com/prismpixelvertex/palatelog/core/service/PalateRadarService.kt`) as an Android location foreground service (`FOREGROUND_SERVICE_LOCATION`) operating strictly on-demand during road trips.
+  - Zero perpetual background location tracking or battery drain when inactive; automatically stops and de-registers all geofences upon session termination.
+  - Displays a persistent, low-importance status notification (`channel_radar_service`) with live monitored stop counts and a 1-tap "Turn Off" action.
+- **Dynamic 500 km Corridor Geofencing (`PalateRadarManager`)**:
+  - Implemented `PalateRadarManager.kt` (`app/src/main/java/com/prismpixelvertex/palatelog/core/radar/PalateRadarManager.kt`) wrapping Google Play Services `GeofencingClient`.
+  - Queries Room SQLite for saved highway dining spots within a 500 km corridor from current GPS coordinates, respecting the Play Services 100-geofence limit.
+  - Prioritizes roadside regrets (`NO_GO` spots) first, followed by mixed/caution stops (`CAUTION`), and optional recommendations (`GO`).
+  - Registers 500-meter entry geofences (`GEOFENCE_TRANSITION_ENTER`) for ample stopping notice at highway speeds.
+- **Proximity Heads-Up Warnings (`PalateRadarReceiver` & `PalateNotificationManager`)**:
+  - Implemented `PalateRadarReceiver.kt` (`app/src/main/java/com/prismpixelvertex/palatelog/core/radar/PalateRadarReceiver.kt`) to catch geofence transitions.
+  - Formats concise, actionable warning copy (e.g., *"🔴 Roadside Regret Ahead (500m): Sri Krishna Dhaba — Avoid: Watery tea, dirty restrooms"*).
+  - Consolidated proximity alerts to a single dedicated notification slot (`NOTIFICATION_ID_RADAR_ALERT`), preventing notification drawer flooding while maintaining `INITIAL_TRIGGER_ENTER` so drivers restarted at fuel bunks are immediately alerted to adjacent regrets.
+  - Batch prioritization: surfaces highest-priority regret first with multi-spot indicators (`[+N other spots nearby]`).
+  - Added high-importance notification channel `channel_radar_alerts` with sound/vibration; tapping the notification deep-links directly to `RestaurantDetailScreen`.
+  - Clean dismissal: stopping Palate Radar immediately clears all active proximity notifications along with the ongoing service notification (`clearAllRadarNotifications()`).
+- **System-Wide Quick Settings Tile (`PalateRadarTileService`)**:
+  - Added `PalateRadarTileService.kt` (`app/src/main/java/com/prismpixelvertex/palatelog/core/service/PalateRadarTileService.kt`) allowing drivers to toggle Palate Radar on/off with 1 tap from the Android Quick Settings shade (`STATE_ACTIVE` / `STATE_INACTIVE`).
+- **Collapsible Explore Banner & Interactive Help Guide**:
+  - Implemented Option A slim collapsible banner (`PalateRadarCard`) in `DashboardScreen.kt`, positioned directly below the search bar and above the filter chips bar, ensuring filter chips remain closely paired with the restaurant card feed. Vertical space consumption reduced by ~80% with auto-collapse on scroll and expandable details.
+  - Added prominent disclosure dialog with clear guidance on opting into favorite (`GO`) stops in Settings.
+  - Added dedicated Palate Radar guide card in `HelpGuideScreen.kt` with deep-linking shortcut (`HelpTopicKey.RADAR`).
+  - Added Palate Radar settings in `SettingsScreen.kt` including an opt-in toggle to alert for recommended (`GO`) stops and a privacy disclosure review/reset action.
+- **Google Play Compliance Documentation**:
+  - Created `doc/play_store_location_policy_justification.md` containing complete ready-to-use declaration answers, core feature justifications, prominent disclosure text, and reviewer video walkthrough script.
+
 ## [1.2.22] - 2026-11-07
 
 ### Added & Enhanced (Phase 3A: Smart Notifications & Sync Health Alerts)

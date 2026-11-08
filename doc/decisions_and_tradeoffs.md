@@ -234,7 +234,7 @@ When capturing bill receipts, menu cards, or food dish photos in the visit edito
 
 ---
 
-## ADR 013: Notification Strategy, Anti-Patterns & User-Controlled Highway Co-pilot Geofencing
+## ADR 013: Notification Strategy, Anti-Patterns & User-Controlled Highway Palate Radar Geofencing
 
 ### Context
 Notifications can be either a high-leverage utility or an intrusive annoyance that prompts immediate app uninstallation. PalateLog is an offline-first dining memory journal and regret logger, not an engagement-driven social network or delivery aggregator. We evaluated whether notifications have a legitimate role in the app, explicitly identified anti-patterns to avoid, and designed an architectural blueprint for high-utility, zero-spam notifications.
@@ -257,10 +257,10 @@ Notifications can be either a high-leverage utility or an intrusive annoyance th
    - When periodic background sync successfully integrates newly added entries from family members, a low-priority, batched summary notification informs the user (e.g. *"Priya added a review for Nagarjuna: Must Try Biriyani, Avoid Chicken Fry"*).
    - Verified on physical test device with deep-link intent routing directly to Settings (for auth) and Explore (for digests).
 
-#### Phase 2: Combined Highway Co-pilot with On-Demand Geofencing
+#### Phase 2: Highway Palate Radar with On-Demand Geofencing (Completed in v1.2.23 ✅)
 1. **User-Controlled Trip Session (Quick Settings Tile & In-App Toggle)**:
    - Rather than requesting continuous `ACCESS_BACKGROUND_LOCATION` 24/7 (which strains battery and triggers restrictive Google Play background location policies), highway monitoring is strictly on-demand.
-   - Users activate "Highway Co-pilot" via an Android Quick Settings Tile (`HighwayTileService`) or an in-app toggle when embarking on a road trip.
+   - Users activate "Highway Palate Radar" via an Android Quick Settings Tile (`PalateRadarTileService`) or an in-app toggle when embarking on a road trip.
 2. **Dynamic 500 km Geofence Registration**:
    - Upon activation, PalateLog queries local Room SQLite for saved highway stops (`highwayOrRoute IS NOT NULL`) within a 500 km radius of the current GPS location.
    - Registers up to 100 geofences with Android's low-power `GeofencingClient` (`LocationServices.getGeofencingClient`):

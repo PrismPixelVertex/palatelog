@@ -216,6 +216,7 @@
     <string name="help_chip_dish_matrix">🍽️ Dish Matrix</string>
     <string name="help_chip_map">🗺️ Map &amp; Travel</string>
     <string name="help_chip_privacy">🔒 Privacy &amp; Offline</string>
+    <string name="help_chip_radar">📡 Palate Radar</string>
 
     <!-- Help Category Tags -->
     <string name="help_tag_sync">FAMILY CLOUD SYNC</string>
@@ -224,6 +225,7 @@
     <string name="help_tag_dish_matrix">CORE PHILOSOPHY</string>
     <string name="help_tag_map">TRAVEL &amp; MAPS</string>
     <string name="help_tag_privacy">SECURITY &amp; STORAGE</string>
+    <string name="help_tag_radar">HIGHWAY RADAR</string>
 
     <!-- Help Card Titles & Subtitles -->
     <string name="help_card_sync_title">Google Drive Family Sync</string>
@@ -510,4 +512,65 @@
     <string name="notification_family_sync_plural">%1$s added %2$d new dining reviews</string>
     <string name="notification_family_sync_generic_single">Family added %1$d new dining review</string>
     <string name="notification_family_sync_generic_plural">Family added %1$d new dining reviews</string>
+
+    <!-- Palate Radar Notifications & Service -->
+    <string name="notification_channel_radar_alerts_name">Palate Radar Proximity Warnings</string>
+    <string name="notification_channel_radar_alerts_desc">High-priority heads-up alerts when approaching logged roadside regrets or favorite highway stops</string>
+    <string name="notification_channel_radar_service_name">Palate Radar Trip Service</string>
+    <string name="notification_channel_radar_service_desc">Ongoing trip session notification while Palate Radar is actively monitoring the road</string>
+    <string name="radar_service_notification_title">Palate Radar Active 📡</string>
+    <string name="radar_service_notification_scanning_single">Scanning %1$d saved highway stop within 500 km</string>
+    <string name="radar_service_notification_scanning_plural">Scanning %1$d saved highway stops within 500 km</string>
+    <string name="radar_service_notification_scanning_none">Scanning along highway corridor (0 stops logged within 500 km)</string>
+    <string name="radar_service_action_stop">Turn Off</string>
+    <string name="radar_alert_no_go_title">🔴 Roadside Regret Ahead (500m)</string>
+    <string name="radar_alert_go_title">🟢 Must-Visit Stop Ahead (500m)</string>
+    <string name="radar_alert_caution_title">🟡 Caution Stop Ahead (500m)</string>
+    <string name="radar_alert_body_format">%1$s — %2$s</string>
+    <string name="radar_alert_no_details">Logged in your dining history</string>
+    <string name="radar_alert_additional_spots"> (+%1$d other stop nearby)</string>
+    <string name="radar_alert_additional_spots_plural"> (+%1$d other stops nearby)</string>
+
+    <!-- Palate Radar Quick Settings Tile -->
+    <string name="radar_tile_label">Palate Radar</string>
+    <string name="radar_tile_state_active">Scanning</string>
+    <string name="radar_tile_state_inactive">Off</string>
+
+    <!-- Palate Radar In-App Prominent Disclosure -->
+    <string name="radar_disclosure_title">Turn On Palate Radar? 📡</string>
+    <string name="radar_disclosure_message">Palate Radar accesses your device location while driving—including when the screen is locked or while using other navigation apps—to monitor up to 100 saved highway stops within 500 km and alert you 500 meters before you reach them.\n\n• 100% On-Device: Your GPS coordinates are checked strictly against your local private database and Google Play Services Geofencing.\n• Zero Tracking: Your location is never logged, stored, or sent to any server or third party.\n• You Control It: Active only during your trip. You can stop Palate Radar at any time via the Quick Settings Tile or the persistent notification.\n• Regrets Focus: By default, alerts you strictly for NO-GO roadside regrets. Want to see GO stops as well? You can enable them anytime in Settings.</string>
+    <string name="radar_disclosure_confirm">Turn On Radar</string>
+    <string name="radar_disclosure_dismiss">Not Now</string>
+
+    <!-- Palate Radar Dashboard Card -->
+    <string name="radar_dashboard_card_title">Palate Radar 📡</string>
+    <string name="radar_dashboard_card_active_badge">SCANNING ACTIVE</string>
+    <string name="radar_dashboard_card_inactive_badge">TRIP MONITOR OFF</string>
+    <string name="radar_dashboard_card_active_desc">Monitoring %1$d highway stops within 500 km. You will be alerted 500m before reaching them.</string>
+    <string name="radar_dashboard_card_inactive_desc">Heading out on a highway drive? Turn on Palate Radar to receive heads-up alerts for past roadside regrets before you stop.</string>
+    <string name="radar_dashboard_btn_start">Start Palate Radar</string>
+    <string name="radar_dashboard_btn_stop">Stop Radar</string>
+    <string name="radar_dashboard_btn_start_short">Start</string>
+    <string name="radar_dashboard_btn_stop_short">Stop</string>
+    <string name="radar_dashboard_expand">Expand details</string>
+    <string name="radar_dashboard_collapse">Collapse details</string>
+    <string name="radar_dashboard_help">Palate Radar Help</string>
+    <string name="radar_permission_location_required">Location permission is required to activate Palate Radar on highway trips.</string>
+
+    <!-- Palate Radar Settings -->
+    <string name="settings_section_radar">Palate Radar</string>
+    <string name="settings_radar_title">Highway Trip Settings</string>
+    <string name="settings_radar_desc">Configure roadside proximity alerts and Quick Settings tile controls.</string>
+    <string name="settings_radar_include_go_title">Alert for Recommended (GO) stops too</string>
+    <string name="settings_radar_include_go_desc">When enabled, Palate Radar also alerts when approaching top-rated favorite highway stops. When disabled, it strictly alerts for NO-GO regrets.</string>
+    <string name="settings_radar_tile_tip">Tip: Add the \'Palate Radar\' Quick Settings Tile to your Android notification shade for convenient 1-tap toggling before starting a road trip.</string>
+    <string name="settings_radar_btn_review_disclosure">Review Location &amp; Privacy Disclosure</string>
+    <string name="settings_radar_btn_reset_disclosure">Reset &amp; Show Next Time</string>
+    <string name="settings_radar_disclosure_reset_toast">Location disclosure reset. It will appear next time you start Palate Radar on the Explore screen.</string>
+
+    <!-- Help Content: Palate Radar -->
+    <string name="help_card_radar_title">Palate Radar &amp; Highway Trips</string>
+    <string name="help_card_radar_subtitle">Dynamic 500m geofencing, zero-battery trip monitoring, &amp; Quick Settings tile</string>
+    <string name="help_radar_intro">Driving on the highway at 80–100 km/h? Palate Radar acts as your roadside lookout, scanning ahead to alert you 500 meters before you reach previously logged roadside regrets or favorite highway stops.</string>
+    <string name="help_radar_points">• Dynamic Corridor Geofencing: Automatically checks up to 100 highway spots within 500 km of your starting GPS coordinates.\n• 500m Proximity Warnings: High-priority heads-up notification with sound and vibration gives you ample time to safely pass or take the highway exit.\n• Zero Perpetual Battery Drain: Runs strictly on-demand as a trip session while driving. It never tracks your location 24/7 in the background.\n• Quick Settings Tile: Add the \'Palate Radar\' tile to your Android notification shade for 1-tap start/stop without opening the app.\n• Regrets First by Default: Strictly warns for NO-GO regrets to prevent notification noise on the road. You can enable GO recommendations in Settings.\n• 100% On-Device Sovereignty: Your GPS coordinates are evaluated strictly on-device against your local Room database. Zero location telemetry is transmitted to any server.</string>
 </resources>

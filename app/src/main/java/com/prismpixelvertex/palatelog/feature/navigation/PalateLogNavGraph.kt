@@ -94,12 +94,13 @@ sealed class Screen(val route: String, @StringRes val titleRes: Int, val icon: I
 @Composable
 fun PalateLogNavGraph(
     navController: NavHostController = rememberNavController(),
-    initialTarget: String? = null
+    initialTarget: String? = null,
+    initialRestaurantId: String? = null
 ) {
     val navBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = navBackStackEntry?.destination?.route
 
-    LaunchedEffect(initialTarget) {
+    LaunchedEffect(initialTarget, initialRestaurantId) {
         when (initialTarget) {
             PalateNotificationManager.NAV_TARGET_SETTINGS -> {
                 navController.navigate(Screen.Settings.route) {
@@ -117,6 +118,17 @@ fun PalateLogNavGraph(
                     }
                     launchSingleTop = true
                     restoreState = true
+                }
+            }
+            PalateNotificationManager.NAV_TARGET_RESTAURANT_DETAIL -> {
+                if (!initialRestaurantId.isNullOrBlank()) {
+                    navController.navigate(Screen.RestaurantDetail.createRoute(initialRestaurantId)) {
+                        popUpTo(navController.graph.findStartDestination().id) {
+                            saveState = true
+                        }
+                        launchSingleTop = true
+                        restoreState = true
+                    }
                 }
             }
         }
