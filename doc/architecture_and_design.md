@@ -46,6 +46,14 @@ app/src/main/java/com/prismpixelvertex/palatelog/
 │   │   ├── SyncRepository.kt   # Delta export, LWW conflict-merging, JSON backup
 │   │   ├── GoogleDriveSyncClient.kt # Drive REST API client for Mode A & Mode B sync
 │   │   └── SyncWorker.kt       # WorkManager CoroutineWorker for background sync
+│   ├── notification/           # Centralized notification dispatch & channel configuration
+│   │   └── PalateNotificationManager.kt # Low-spam notification manager (radar, sync health, family)
+│   ├── radar/                  # Highway proximity radar & dynamic geofencing
+│   │   ├── PalateRadarManager.kt  # Play Services GeofencingClient wrapper (500 km, 100 cap)
+│   │   └── PalateRadarReceiver.kt # BroadcastReceiver for consolidated 500m arrival warnings
+│   ├── service/                # Android system & foreground services
+│   │   ├── PalateRadarService.kt     # On-demand Location Foreground Service for highway trips
+│   │   └── PalateRadarTileService.kt # Android Quick Settings shade tile for 1-tap activation
 │   ├── update/                 # Google Play In-App Updates
 │   │   └── InAppUpdateHelper.kt# Flexible & immediate update manager
 │   ├── util/                   # Storage & media utilities
@@ -65,16 +73,19 @@ app/src/main/java/com/prismpixelvertex/palatelog/
 │       └── Components.kt       # Badges (VerdictBadge, DishVerdictBadge, ChannelBadge, etc.)
 ├── feature/                    # UI Feature modules
 │   ├── navigation/             # App navigation graph & bottom navigation bar
-│   ├── dashboard/              # Home explore screen, unified search, category filters, cards
+│   ├── dashboard/              # Home explore screen, unified search, category filters, cards, radar banner
 │   ├── quick_capture/          # The 3-second rapid regret logger
 │   ├── entry_editor/           # Full visit editor with prefilled remembered dish chips
 │   ├── restaurant_detail/      # Dish Matrix (Avoid vs Must Try) & visit history timeline
 │   ├── map/                    # Interactive Map (Mappls / OSM fallback) with color-coded markers & preview
 │   ├── help/                   # Help & User Guide screen with deep linking (HelpTopicKey)
-│   └── settings/               # Family profiles, sync controls, and backup export/restore
+│   └── settings/               # Family profiles, sync controls, radar preferences, backup export/restore
 └── di/                         # Hilt Dependency Injection modules
     ├── DatabaseModule.kt
-    └── LocationModule.kt
+    ├── LocationModule.kt
+    ├── NavigationModule.kt
+    ├── NetworkModule.kt
+    └── StorageModule.kt
 ```
 
 ---
