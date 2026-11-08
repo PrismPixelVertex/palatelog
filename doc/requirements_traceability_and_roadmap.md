@@ -65,7 +65,7 @@ Based on the gap analysis, here are the completed phases and recommended next st
     - Low-priority, batched summary notification when background `SyncWorker` fetches new dining logs or dish warnings from family members (e.g. *"Priya added a review for Nagarjuna: Must Try Biriyani, Avoid Chicken Fry"*).
     - Deep-link intent routing from notifications directly to Settings (for auth) or Explore (for digests).
 
-### Phase 3B: Palate Radar & On-Demand Dynamic Geofencing (In Progress 🚀)
+### Phase 3B: Palate Radar & On-Demand Dynamic Geofencing (Completed in v1.2.23 ✅)
 12. **User-Controlled Palate Radar (Quick Settings Tile & In-App Toggle)**:
     - Dedicated Quick Settings Tile (`PalateRadarTileService`) allowing 1-tap activation when starting a highway road trip.
     - Zero background tracking or battery drain when disabled; avoids perpetual 24/7 background location permission friction.
