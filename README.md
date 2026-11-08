@@ -16,8 +16,11 @@
 
 ## ✨ Key Features
 
+- 📡 **Palate Radar (Highway Anti-Regret Driving Assistant)**: On-demand highway proximity radar alerting drivers 500 meters before reaching previously logged roadside dining regrets (`NO_GO`) or favorite dhabas along travel corridors (500 km radius, 100-geofence cap). Features 1-tap activation via an Android Quick Settings tile, single-slot consolidated notifications, and zero perpetual background battery drain.
 - ⚡ **3-Second Speed Capture**: 1-tap floating action automatically grabs GPS coordinates, geocodes the place name, and records an immediate **NO-GO 🔴** or **GO 🟢** verdict with a quick note.
 - 🍲 **Granular Food-Level Verdicts**: Rate restaurants as a whole, or isolate specific dishes (*Must Try / Avoid / Neutral*).
+- 🔔 **Smart Sync Health & Family Digests**: Actionable notifications strictly when human intervention is needed (e.g. Google Drive OAuth expiration or permission loss) with zero noise for normal offline network drops, plus low-priority batched summaries when family members sync new dining logs.
+- 📷 **Dedicated In-App CameraX Viewfinder**: Direct OEM camera HAL integration guaranteeing 100% rear camera selection for crisp, instant capture of receipts, menu cards, and dish photos without third-party camera app switching quirks.
 - 🔍 **Dish-Aware Unified Search**: Tokenized multi-field search matching across restaurant names, cuisines, cities, routes, tags, and specific dish names with relevance ranking.
 - 📖 **Interactive Help & User Guide**: Contextual deep-linked Material 3 user guidebook with category filter chips, onboarding welcome dialog, and instant `?` shortcuts across screens.
 - ⏬ **Floating Scroll Indicators**: Content-aware floating down-arrow indicators on Explore and Restaurant Detail screens signaling off-screen content with 1-tap scroll down.
@@ -41,7 +44,9 @@ PalateLog follows Google's recommended **Clean Architecture** with MVVM / MVI Un
 - **Dependency Injection**: Hilt
 - **Local Persistence**: Room SQLite DB (with FTS5 search and Haversine spatial queries)
 - **Background Sync**: AndroidX WorkManager
+- **Proximity Radar & Geofencing**: Google Play Services Geofencing (`GeofencingClient`) + Location Foreground Service
 - **Location & Geocoding**: Play Services Fused Location Provider (`FusedLocationProviderClient`) + Geocoder
+- **Camera Capture**: AndroidX CameraX (`CameraViewfinder`, `ImageCapture`)
 - **Mapping**: OSMDroid / MapLibre Android (100% free, offline tile support)
 - **Image Loading**: Coil 3 (Compose-first)
 - **Build System**: Gradle Version Catalog (`gradle/libs.versions.toml`)
@@ -54,12 +59,15 @@ PalateLog follows Google's recommended **Clean Architecture** with MVVM / MVI Un
 palatelog/
 ├── app/                        # Main Android application module
 │   ├── src/main/java/com/prismpixelvertex/palatelog/
-│   │   ├── core/               # Database, Location, Sync, Update, Design System, Util
+│   │   ├── core/               # Database, Location, Notification, Radar, Service, Sync, Update, Design System, Util
 │   │   └── feature/            # Dashboard, Details, Editor, Help, Map, Navigation, Quick Capture, Settings
 │   └── build.gradle.kts
 ├── doc/                        # Technical design & architecture documentation
 │   ├── architecture_and_design.md
 │   ├── decisions_and_tradeoffs.md
+│   ├── dependency_upgrade_strategy_and_audit.md
+│   ├── kmp_readiness_implementation_plan.md
+│   ├── play_store_location_policy_justification.md
 │   └── requirements_traceability_and_roadmap.md
 ├── gradle/
 │   └── libs.versions.toml      # Dependency Version Catalog
@@ -76,8 +84,9 @@ palatelog/
 
 Comprehensive documentation is available in the [`doc/`](doc/) directory:
 * [Architecture & Technical Design](doc/architecture_and_design.md): Deep dive into Clean Architecture, Room schemas, and UDF patterns.
-* [Decisions & Trade-offs (ADRs)](doc/decisions_and_tradeoffs.md): Why we chose OpenStreetMap + Google Maps intent, 3-second quick logging, serverless Drive sync, OpenJDK 21 LTS, and deep-linked user guide architecture.
+* [Decisions & Trade-offs (ADRs)](doc/decisions_and_tradeoffs.md): Why we chose OpenStreetMap + Google Maps intent, 3-second quick logging, serverless Drive sync, OpenJDK 21 LTS, CameraX in-app capture, and Highway Palate Radar architecture.
 * [Requirements Traceability & Roadmap](doc/requirements_traceability_and_roadmap.md): Complete traceability matrix mapping original user requirements against the code, with next-step priorities.
+* [Play Store Location Policy & Privacy Justification](doc/play_store_location_policy_justification.md): Ready-to-use Google Play Console declarations, prominent in-app disclosure copy, Data Safety tables, and reviewer video scripts.
 
 ---
 
