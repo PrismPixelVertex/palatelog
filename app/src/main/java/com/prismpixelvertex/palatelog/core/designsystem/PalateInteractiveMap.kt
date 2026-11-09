@@ -18,6 +18,7 @@ fun PalateInteractiveMap(
     centerLatitude: Double = 12.9716,
     centerLongitude: Double = 77.5946,
     zoomLevel: Double = 16.0,
+    animationTrigger: Long = 0L,
     state: PalateMapState? = null,
     markers: List<PalateMapMarker> = emptyList(),
     onSingleTap: ((latitude: Double, longitude: Double) -> Unit)? = null,
@@ -36,7 +37,7 @@ fun PalateInteractiveMap(
     val targetLat = state?.latitude ?: centerLatitude
     val targetLng = state?.longitude ?: centerLongitude
     val targetZoom = state?.zoom ?: zoomLevel
-    val animationTrigger = state?.cameraAnimationTrigger ?: 0L
+    val effectiveAnimationTrigger = state?.cameraAnimationTrigger ?: animationTrigger
 
     when (effectiveProvider) {
         MapProviderType.MAPPLS -> {
@@ -45,7 +46,7 @@ fun PalateInteractiveMap(
                 centerLatitude = targetLat,
                 centerLongitude = targetLng,
                 zoomLevel = targetZoom,
-                animationTrigger = animationTrigger,
+                animationTrigger = effectiveAnimationTrigger,
                 markers = markers,
                 onSingleTap = onSingleTap,
                 onLongPress = onLongPress,
@@ -62,7 +63,7 @@ fun PalateInteractiveMap(
                 centerLatitude = targetLat,
                 centerLongitude = targetLng,
                 zoomLevel = targetZoom,
-                animationTrigger = animationTrigger,
+                animationTrigger = effectiveAnimationTrigger,
                 markers = markers,
                 onSingleTap = onSingleTap,
                 onLongPress = onLongPress,
@@ -76,7 +77,7 @@ fun PalateInteractiveMap(
                 centerLatitude = targetLat,
                 centerLongitude = targetLng,
                 zoomLevel = targetZoom,
-                animationTrigger = animationTrigger,
+                animationTrigger = effectiveAnimationTrigger,
                 markers = markers,
                 onSingleTap = onSingleTap,
                 onLongPress = onLongPress,

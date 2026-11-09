@@ -5,6 +5,23 @@ All notable changes to PalateLog will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.25] - 2026-11-10
+
+### Fixed & Enhanced (Location Picker, Geocoding & Relational Dish Cleanup)
+- **Quick Regret Logger Place Name Refresh**:
+  - Fixed `QuickCaptureViewModel.onLocationPicked` to refresh `placeName` with reverse-geocoded place details upon picking a location on the map, eliminating stale stall names.
+- **Location Picker Re-centering & Animation**:
+  - Fixed the "My Location" Floating Action Button in `LocationPickerDialog` to fetch and animate to the user's actual GPS location rather than remaining stationary on the dropped pin.
+  - Added `animationTrigger` support to `PalateInteractiveMap` to ensure camera transitions trigger reliably when coordinates update without a `PalateMapState` instance.
+- **Suburban & Rural Geocoding Fallback**:
+  - Enhanced reverse geocoding in `LocationClient` with fallback across `thoroughfare`, `subLocality`, `subAdminArea`, and formatted address line, ensuring address and street fields resolve accurately in suburban and highway areas.
+  - Updated `EntryEditorViewModel.onLocationPicked` to update address with resolved geocode results.
+- **Family Reaction Tag Display Hygiene**:
+  - Updated `FamilyReactionTag` in `Components.kt` and `EntryEditorViewModel` to omit the automatic primary device name prefix when freeform member reactions are recorded, cleanly rendering user-entered text.
+- **Relational Dish Deletion & Orphan Prevention**:
+  - Added `softDeleteForVisit` in `DishFeedbackDao` and wired it into `RestaurantDetailViewModel.deleteVisit` so deleting a visit cascades soft-deletion to its associated dish feedback records.
+  - Added an individual dish deletion action and confirmation dialog in `RestaurantDetailScreen`, allowing users to delete mistakenly added dishes directly from the Dish Matrix.
+
 ## [1.2.24] - 2026-11-09
 
 ### Changed & Modernized (Platform SDK Upgrade to Android 17 / API 37)

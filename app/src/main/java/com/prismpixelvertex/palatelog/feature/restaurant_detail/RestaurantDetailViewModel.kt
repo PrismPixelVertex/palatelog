@@ -145,6 +145,13 @@ class RestaurantDetailViewModel @Inject constructor(
     fun deleteVisit(visitId: String) {
         viewModelScope.launch {
             visitDao.softDelete(visitId)
+            dishDao.softDeleteForVisit(visitId)
+        }
+    }
+
+    fun deleteDish(dishId: String) {
+        viewModelScope.launch {
+            dishDao.softDelete(dishId)
         }
     }
 

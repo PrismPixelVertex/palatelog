@@ -47,4 +47,7 @@ interface DishFeedbackDao {
 
     @Query("UPDATE dish_feedbacks SET isDeleted = 1, updatedAt = :timestamp WHERE id = :id")
     suspend fun softDelete(id: String, timestamp: Long = System.currentTimeMillis())
+
+    @Query("UPDATE dish_feedbacks SET isDeleted = 1, updatedAt = :timestamp WHERE visitId = :visitId")
+    suspend fun softDeleteForVisit(visitId: String, timestamp: Long = System.currentTimeMillis())
 }

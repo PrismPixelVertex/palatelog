@@ -146,6 +146,7 @@ fun FamilyReactionTag(
     reaction: String,
     modifier: Modifier = Modifier
 ) {
+    val displayText = if (memberName.isNotBlank()) "$memberName: $reaction" else reaction
     Row(
         modifier = modifier
             .clip(RoundedCornerShape(12.dp))
@@ -161,7 +162,7 @@ fun FamilyReactionTag(
         )
         Spacer(modifier = Modifier.width(6.dp))
         Text(
-            text = "$memberName: $reaction",
+            text = displayText,
             style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )

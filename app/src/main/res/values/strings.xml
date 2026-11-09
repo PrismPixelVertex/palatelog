@@ -464,6 +464,9 @@
     <string name="restaurant_detail_visit_deleted_toast">Visit entry deleted</string>
     <string name="restaurant_detail_delete_visit_dialog_title">Delete Visit Entry?</string>
     <string name="restaurant_detail_delete_visit_dialog_msg">Are you sure you want to delete this visit record?</string>
+    <string name="restaurant_detail_delete_dish_dialog_title">Delete Dish Feedback?</string>
+    <string name="restaurant_detail_delete_dish_dialog_msg">Are you sure you want to delete \"%s\" from this restaurant\'s dish matrix?</string>
+    <string name="restaurant_detail_dish_deleted_toast">Dish feedback deleted</string>
     <string name="restaurant_detail_edit_restaurant_title">Edit Restaurant Details</string>
     <string name="restaurant_detail_area_label">Area / Street</string>
     <string name="restaurant_detail_city_label">City</string>

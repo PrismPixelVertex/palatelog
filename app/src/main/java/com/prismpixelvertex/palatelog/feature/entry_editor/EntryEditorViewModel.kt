@@ -223,8 +223,13 @@ class EntryEditorViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.value = _uiState.value.copy(latitude = lat, longitude = lng)
             val geocoded = locationService.reverseGeocode(lat, lng)
+            val resolvedAddress = when {
+                geocoded.second.isNotBlank() -> geocoded.second
+                geocoded.first.isNotBlank() -> geocoded.first
+                else -> _uiState.value.address
+            }
             _uiState.value = _uiState.value.copy(
-                address = if (geocoded.second.isNotBlank()) geocoded.second else _uiState.value.address,
+                address = resolvedAddress,
                 city = if (geocoded.third.isNotBlank()) geocoded.third else _uiState.value.city
             )
         }
@@ -396,7 +401,7 @@ class EntryEditorViewModel @Inject constructor(
                     val memberPrefMap = if (draft.selectedMemberName.isNotBlank() && draft.memberReaction.isNotBlank()) {
                         mapOf(draft.selectedMemberName to draft.memberReaction)
                     } else if (draft.memberReaction.isNotBlank()) {
-                        mapOf(primaryName to draft.memberReaction)
+                        mapOf("" to draft.memberReaction)
                     } else if (draft.tagsText.isNotBlank()) {
                         mapOf(primaryName to draft.tagsText)
                     } else {
