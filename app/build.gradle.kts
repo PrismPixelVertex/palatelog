@@ -63,14 +63,14 @@ if (keystorePropertiesFile.exists()) {
 
 android {
     namespace = "com.prismpixelvertex.palatelog"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "com.prismpixelvertex.palatelog"
         minSdk = 26
-        targetSdk = 36
-        versionCode = 31
-        versionName = "1.2.23"
+        targetSdk = 37
+        versionCode = 32
+        versionName = "1.2.24"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {

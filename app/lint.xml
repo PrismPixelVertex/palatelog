@@ -2,4 +2,6 @@
 <lint>
     <!-- String resources retained for upcoming dedicated localization session (ADR 008) -->
     <issue id="UnusedResources" severity="ignore" />
+    <!-- LocalContext.current.getString() in non-composable callbacks and Toasts -->
+    <issue id="LocalContextGetResourceValueCall" severity="warning" />
 </lint>
