@@ -14,6 +14,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added `android.suppressUnsupportedCompileSdk=37.0` in `gradle.properties` to ensure smooth build reproducibility and prevent warning noise across AGP 8.13+ tooling.
 - **Android Lint & Compose Configuration**:
   - Configured `LocalContextGetResourceValueCall` severity to `warning` in `app/lint.xml` to accommodate string lookups inside non-composable callback lambdas (e.g. CameraX capture listeners, Toast helpers) while keeping core lint passes clean.
+- **AndroidX Dependency Maintenance**:
+  - Upgraded `activityCompose` from `1.12.0` to `1.13.0` in `gradle/libs.versions.toml`.
+  - Upgraded `camerax` from `1.4.1` to `1.6.2` in `gradle/libs.versions.toml`.
 - **Verification & Compatibility**:
   - Verified full test suite execution (`:app:testDebugUnitTest`) with 9/9 passing tests.
   - Verified debug and release assembly (`:app:assembleDebug`, `:app:assembleRelease`) with R8 minification and resource shrinking succeeding on API 37.
