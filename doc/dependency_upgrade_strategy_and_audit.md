@@ -12,7 +12,7 @@ This audit evaluates available upgrades against the project's current baseline:
 
 | Dimension | Baseline Value | Strategic Constraint |
 | :--- | :--- | :--- |
-| **Android Target / Compile SDK** | `compileSdk = 36`, `targetSdk = 36` | Target stable Android 16 (Vanilla Ice Cream / API 36). |
+| **Android Target / Compile SDK** | `compileSdk = 37`, `targetSdk = 37` | Target Android 17 (API 37). |
 | **Android Gradle Plugin (AGP)** | `8.13.2` | Retains compatibility with Gradle 8.14 and custom asset merge build tasks. |
 | **Kotlin Compiler** | `2.0.21` | Modern K2 compiler frontend with Compose Compiler plugin. |
 | **Kotlin Symbol Processing (KSP)** | `2.0.21-1.0.28` | Strictly locked to Kotlin compiler version `2.0.21`. |
@@ -69,7 +69,8 @@ These libraries contain bug fixes, performance optimizations, and backward-compa
 | Library Alias | Group & Artifact | Baseline | Upgraded | Verification & Upper Bound |
 | :--- | :--- | :--- | :--- | :--- |
 | `coreKtx` | `androidx.core:core-ktx` | `1.15.0` | **`1.18.0`** | `1.18.0` verified on SDK 36 (`1.19.1` requires SDK 37). |
-| `activityCompose` | `androidx.activity:activity-compose` | `1.9.3` | **`1.12.0`** | `1.12.0` verified on SDK 36 (`1.13.0` requires SDK 37). |
+| `activityCompose` | `androidx.activity:activity-compose` | `1.9.3` | **`1.13.0`** | `1.13.0` verified on SDK 37 on AGP 8.13.2. |
+| `camerax` | `androidx.camera:camera-*` | `1.4.1` | **`1.6.2`** | `1.6.2` verified on SDK 37 on AGP 8.13.2. |
 | `work` | `androidx.work:work-runtime-ktx` | `2.10.0` | **`2.12.0`** | Drop-in update; verifies WorkManager sync jobs cleanly. |
 | `credentials` | `androidx.credentials:credentials` | `1.3.0` | **`1.6.0`** | Stability fixes for Credential Manager Google Sign-In. |
 | `coil3` | `io.coil-kt.coil3:coil-*` | `3.1.0` | **`3.2.0`** | Image loader verified (`3.3.0+` requires Kotlin 2.2+). |
