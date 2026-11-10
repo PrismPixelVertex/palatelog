@@ -5,6 +5,24 @@ All notable changes to PalateLog will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.28] - 2026-11-10
+
+### Fixed & Hardened (GitHub Code Scanning Security Hardening)
+- **Path Traversal Protection (CWE-22 / Alert #1)**:
+  - Added `SyncSecurityUtils` to sanitize and validate incoming photo file names from cross-device JSON payloads.
+  - Strictly enforce image extension whitelist (`.jpg`, `.jpeg`, `.png`, `.webp`) and reject path traversal sequences (`..`, `/`, `\`, null bytes).
+  - Enforced canonical path boundaries so photo file destinations can never resolve outside the app's internal `photos/` directory.
+- **Resource Exhaustion Defense (CWE-400 / Alert #4)**:
+  - Stream remote photo downloads via Ktor `prepareGet` and `ByteReadChannel.copyTo` directly to a temporary file, eliminating memory spikes and `OutOfMemoryError` risks.
+  - Implemented strict size caps: 15 MB for photo downloads (`MAX_PHOTO_SIZE_BYTES`) and 10 MB for sync JSON payloads (`MAX_PAYLOAD_SIZE_BYTES`).
+  - Added pre-flight `Content-Length` inspection, stream byte limit counting, and `Content-Type` validation to reject untrusted or oversized media.
+- **Data Backup & Privacy Hardening (CWE-312 / Alert #2)**:
+  - Added `disableIfNoEncryptionCapabilities="true"` to `<cloud-backup>` in `app/src/main/res/xml/data_extraction_rules.xml` to require device screen-lock / end-to-end encryption for cloud backups.
+  - Excluded `palatelog_sync_prefs.xml` from both `<cloud-backup>` and `<device-transfer>` across `data_extraction_rules.xml` and `backup_rules.xml` to safeguard Google account email, target Drive folder ID, and sync state.
+- **OAuth Scope Documentation & Unit Tests (CWE-250 / Alert #3)**:
+  - Clarified architectural justification for `drive.readonly` in `GoogleDriveSyncClient` required for Mode B cross-account shared family sync folder discovery.
+  - Added comprehensive unit tests in `SyncSecurityHardeningTest` verifying path traversal sanitization, canonical directory enclosure, and resource cap configurations.
+
 ## [1.2.27] - 2026-11-10
 
 ### Changed & Enhanced (AGP 9.5.1, Gradle 9.6.0 & Dependency Compatibility Upgrade)
