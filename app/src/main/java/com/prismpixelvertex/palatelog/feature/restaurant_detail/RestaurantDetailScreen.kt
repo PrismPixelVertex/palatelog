@@ -522,10 +522,19 @@ fun RestaurantDetailScreen(
 
     // Dialog: Delete Visit Confirmation
     visitToDelete?.let { visit ->
+        val linkedDishCount = uiState.allDishes.count { it.visitId == visit.id }
         AlertDialog(
             onDismissRequest = { visitToDelete = null },
             title = { Text(stringResource(R.string.restaurant_detail_delete_visit_dialog_title)) },
-            text = { Text(stringResource(R.string.restaurant_detail_delete_visit_dialog_msg)) },
+            text = {
+                Text(
+                    if (linkedDishCount > 0) {
+                        stringResource(R.string.restaurant_detail_delete_visit_dialog_msg_with_dishes, linkedDishCount)
+                    } else {
+                        stringResource(R.string.restaurant_detail_delete_visit_dialog_msg)
+                    }
+                )
+            },
             confirmButton = {
                 TextButton(
                     onClick = {

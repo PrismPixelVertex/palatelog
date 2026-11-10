@@ -27,6 +27,7 @@ import javax.inject.Inject
 data class RestaurantDetailUiState(
     val restaurant: Restaurant? = null,
     val visits: List<VisitEntry> = emptyList(),
+    val allDishes: List<DishFeedback> = emptyList(),
     val mustTryDishes: List<DishFeedback> = emptyList(),
     val avoidDishes: List<DishFeedback> = emptyList(),
     val neutralDishes: List<DishFeedback> = emptyList(),
@@ -60,6 +61,7 @@ class RestaurantDetailViewModel @Inject constructor(
         RestaurantDetailUiState(
             restaurant = restaurant,
             visits = visits,
+            allDishes = dishes,
             mustTryDishes = mustTry,
             avoidDishes = avoid,
             neutralDishes = neutral,
