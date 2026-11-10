@@ -14,7 +14,8 @@ apply(plugin = "com.mappls.services.android")
 
 // In CI or environments without Mappls portal credentials, generate mock configuration files
 // so that the Mappls Services Gradle task can execute and compile successfully without failing the build.
-val ensureMapplsConfigFiles by tasks.registering {
+val ensureMapplsConfigFiles = tasks.register("ensureMapplsConfigFiles") {
+    description = "Generates mock configuration files for Mappls Services in CI or headless environments"
     doLast {
         val hasOlf = fileTree(projectDir) {
             include("**/*.a.olf")
@@ -69,12 +70,18 @@ android {
         applicationId = "com.prismpixelvertex.palatelog"
         minSdk = 26
         targetSdk = 37
-        versionCode = 34
-        versionName = "1.2.26"
+        versionCode = 35
+        versionName = "1.2.27"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
             useSupportLibrary = true
+        }
+    }
+
+    testOptions {
+        unitTests {
+            isIncludeAndroidResources = true
         }
     }
 
@@ -107,9 +114,6 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
-    kotlinOptions {
-        jvmTarget = "17"
-    }
     buildFeatures {
         compose = true
         buildConfig = true
@@ -126,6 +130,12 @@ android {
             excludes += "META-INF/NOTICE"
             excludes += "META-INF/NOTICE.txt"
         }
+    }
+}
+
+kotlin {
+    compilerOptions {
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
     }
 }
 
