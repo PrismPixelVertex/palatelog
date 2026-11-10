@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Migrated `tasks.registering` to `tasks.register("ensureMapplsConfigFiles")` with task description.
   - Replaced deprecated `android { kotlinOptions { jvmTarget = "17" } }` with `kotlin { compilerOptions { jvmTarget.set(JvmTarget.JVM_17) } }`.
   - Added `testOptions.unitTests.isIncludeAndroidResources = true` in `app/build.gradle.kts` and `android.onlyEnableUnitTestForTheTestedBuildType=false` in `gradle.properties` to ensure AGP 9.5+ Compose Preview runfile tasks configure successfully across all variants.
+  - Enabled R8 optimized resource shrinking (`android.r8.optimizedResourceShrinking=true`) in `gradle.properties` to optimize release APK binary size and eliminate the AGP 10 deprecation warning.
 - **Sync Reliability & Timeout Resilience**:
   - Increased Ktor HTTP timeouts in `NetworkModule` (`requestTimeoutMillis = 60s`, `socketTimeoutMillis = 45s`, `connectTimeoutMillis = 20s`) to provide sufficient headroom for Google Drive media uploads over cellular connections.
   - Added 1-time automatic retry with backoff for transient timeouts and socket disconnections during sync payload uploads in `GoogleDriveSyncClient`.
