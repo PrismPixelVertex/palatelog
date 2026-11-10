@@ -20,7 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Updated `FamilyReactionTag` in `Components.kt` and `EntryEditorViewModel` to omit the automatic primary device name prefix when freeform member reactions are recorded, cleanly rendering user-entered text.
 - **Relational Dish Deletion & Orphan Prevention**:
   - Added `softDeleteForVisit` in `DishFeedbackDao` and wired it into `RestaurantDetailViewModel.deleteVisit` so deleting a visit cascades soft-deletion to its associated dish feedback records.
-  - Enhanced the Visit Deletion dialog in `RestaurantDetailScreen` to dynamically warn the user if linked dishes will also be removed from the Dish Matrix, displaying the exact count of affected dishes.
+  - Enhanced the Visit Deletion dialog in `RestaurantDetailScreen` to dynamically warn the user if linked dishes and/or attached photos will be removed from view, displaying exact counts of affected dishes and photos.
   - Added an individual dish deletion action and confirmation dialog in `RestaurantDetailScreen`, allowing users to delete mistakenly added dishes directly from the Dish Matrix.
 
 ## [1.2.24] - 2026-11-09
