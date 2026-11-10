@@ -5,14 +5,20 @@ import android.content.Context
 import android.location.Address
 import android.location.Geocoder
 import android.location.Location
+import android.location.LocationManager
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
+import androidx.core.location.LocationManagerCompat
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.CancellationTokenSource
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeoutOrNull
+import java.io.IOException
 import java.util.Locale
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -33,6 +39,18 @@ class LocationClient @Inject constructor(
     @ApplicationContext private val context: Context,
     private val fusedLocationClient: FusedLocationProviderClient
 ) : LocationService {
+
+    override fun isLocationEnabled(): Boolean {
+        val locationManager = context.getSystemService(Context.LOCATION_SERVICE) as? LocationManager ?: return false
+        return LocationManagerCompat.isLocationEnabled(locationManager)
+    }
+
+    override fun isNetworkAvailable(): Boolean {
+        val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager ?: return false
+        val activeNetwork = connectivityManager.activeNetwork ?: return false
+        val capabilities = connectivityManager.getNetworkCapabilities(activeNetwork) ?: return false
+        return capabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+    }
 
     @SuppressLint("MissingPermission")
     override suspend fun getCurrentLocation(skipGeocoding: Boolean): LocationResult? = withContext(Dispatchers.IO) {
@@ -76,10 +94,10 @@ class LocationClient @Inject constructor(
         }
 
         if (location != null) {
-            // Reverse geocode with a short 500ms timeout unless skipGeocoding is requested (for fast distance sorting)
+            // Reverse geocode with a 1500ms timeout unless skipGeocoding is requested (for fast distance sorting)
             val geocoded = if (!skipGeocoding) {
                 try {
-                    withTimeoutOrNull(500.milliseconds) {
+                    withTimeoutOrNull(1500.milliseconds) {
                         reverseGeocode(location.latitude, location.longitude)
                     } ?: Triple("", "", "")
                 } catch (_: Exception) {
@@ -101,29 +119,56 @@ class LocationClient @Inject constructor(
         }
     }
 
-    override suspend fun reverseGeocode(latitude: Double, longitude: Double): Triple<String, String, String> =
+    override suspend fun reverseGeocodeWithStatus(latitude: Double, longitude: Double): GeocodeResult =
         withContext(Dispatchers.IO) {
-            try {
-                val geocoder = Geocoder(context, Locale.getDefault())
-                @Suppress("DEPRECATION")
-                val addresses: List<Address>? = geocoder.getFromLocation(latitude, longitude, 1)
-                val address = addresses?.firstOrNull()
+            if (!isNetworkAvailable()) {
+                return@withContext GeocodeResult.NetworkUnavailable("Network is unavailable")
+            }
 
-                if (address != null) {
-                    val placeName = address.featureName ?: address.subLocality ?: address.locality ?: ""
-                    val street = address.thoroughfare
-                        ?: address.subLocality
-                        ?: address.subAdminArea
-                        ?: address.getAddressLine(0)?.split(",")?.firstOrNull()?.trim()
-                        ?: address.featureName
-                        ?: ""
-                    val city = address.locality ?: address.subAdminArea ?: address.adminArea ?: ""
-                    Triple(placeName, street, city)
-                } else {
-                    Triple("", "", "")
+            var lastException: Exception? = null
+            for (attempt in 1..2) {
+                try {
+                    val geocoder = Geocoder(context, Locale.getDefault())
+                    @Suppress("DEPRECATION")
+                    val addresses: List<Address>? = geocoder.getFromLocation(latitude, longitude, 1)
+                    val address = addresses?.firstOrNull()
+
+                    if (address != null) {
+                        val placeName = address.featureName ?: address.subLocality ?: address.locality ?: ""
+                        val street = address.thoroughfare
+                            ?: address.subLocality
+                            ?: address.subAdminArea
+                            ?: address.getAddressLine(0)?.split(",")?.firstOrNull()?.trim()
+                            ?: address.featureName
+                            ?: ""
+                        val city = address.locality ?: address.subAdminArea ?: address.adminArea ?: ""
+                        return@withContext GeocodeResult.Success(placeName, street, city)
+                    } else {
+                        return@withContext GeocodeResult.Failed("No address found for coordinates")
+                    }
+                } catch (e: IOException) {
+                    lastException = e
+                    if (attempt < 2) {
+                        delay(600.milliseconds)
+                    }
+                } catch (e: Exception) {
+                    lastException = e
+                    break
                 }
-            } catch (e: Exception) {
-                Triple("", "", "")
+            }
+
+            if (lastException is IOException || !isNetworkAvailable()) {
+                GeocodeResult.NetworkUnavailable(lastException?.message ?: "Network error during reverse geocoding")
+            } else {
+                GeocodeResult.Failed(lastException?.message ?: "Reverse geocoding failed")
             }
         }
+
+    override suspend fun reverseGeocode(latitude: Double, longitude: Double): Triple<String, String, String> {
+        return when (val result = reverseGeocodeWithStatus(latitude, longitude)) {
+            is GeocodeResult.Success -> Triple(result.placeName, result.street, result.city)
+            else -> Triple("", "", "")
+        }
+    }
 }
+

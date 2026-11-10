@@ -28,13 +28,22 @@ import kotlinx.coroutines.launch
 import java.util.UUID
 import javax.inject.Inject
 
+enum class QuickCaptureLocationStatus {
+    ACQUIRING,
+    ACQUIRED,
+    LOCATION_DISABLED,
+    FAILED
+}
+
 data class QuickCaptureUiState(
     val placeName: String = "",
     val streetOrArea: String = "",
     val city: String = "",
     val latitude: Double = 0.0,
     val longitude: Double = 0.0,
-    val isLocationLoading: Boolean = true,
+    val locationStatus: QuickCaptureLocationStatus = QuickCaptureLocationStatus.ACQUIRING,
+    val isResolvingAddress: Boolean = false,
+    val addressResolutionFailed: Boolean = false,
     val selectedVerdict: Verdict = Verdict.NO_GO,
     val quickReason: String = "",
     val dishName: String = "",
@@ -48,6 +57,7 @@ data class QuickCaptureUiState(
 sealed interface QuickCaptureEvent {
     object SavedSuccessfully : QuickCaptureEvent
     data class Error(val message: String) : QuickCaptureEvent
+    data class ShowSnackbar(val message: String, val actionLabel: String? = null) : QuickCaptureEvent
 }
 
 @HiltViewModel
@@ -78,7 +88,7 @@ class QuickCaptureViewModel @Inject constructor(
                 longitude = navLng,
                 streetOrArea = navAddress ?: "",
                 city = navCity ?: "",
-                isLocationLoading = false
+                locationStatus = QuickCaptureLocationStatus.ACQUIRED
             )
             checkNearbyRestaurant(navLat, navLng)
         } else {
@@ -98,8 +108,19 @@ class QuickCaptureViewModel @Inject constructor(
     }
 
     fun acquireLocation() {
+        if (!locationService.isLocationEnabled()) {
+            _uiState.value = _uiState.value.copy(
+                locationStatus = QuickCaptureLocationStatus.LOCATION_DISABLED,
+                isResolvingAddress = false
+            )
+            return
+        }
+
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLocationLoading = true)
+            _uiState.value = _uiState.value.copy(
+                locationStatus = QuickCaptureLocationStatus.ACQUIRING,
+                addressResolutionFailed = false
+            )
             val loc = locationService.getCurrentLocation()
             if (loc != null) {
                 val bbox = GeoUtils.getBoundingBox(loc.latitude, loc.longitude, 0.1) // 100m
@@ -115,10 +136,14 @@ class QuickCaptureViewModel @Inject constructor(
                     streetOrArea = loc.street,
                     city = loc.city,
                     nearbyExistingRestaurant = closest,
-                    isLocationLoading = false
+                    locationStatus = QuickCaptureLocationStatus.ACQUIRED,
+                    addressResolutionFailed = loc.street.isBlank() && loc.placeName.isBlank()
                 )
             } else {
-                _uiState.value = _uiState.value.copy(isLocationLoading = false)
+                _uiState.value = _uiState.value.copy(
+                    locationStatus = QuickCaptureLocationStatus.FAILED,
+                    addressResolutionFailed = false
+                )
             }
         }
     }
@@ -128,15 +153,46 @@ class QuickCaptureViewModel @Inject constructor(
             _uiState.value = _uiState.value.copy(
                 latitude = lat,
                 longitude = lng,
-                isLocationLoading = false
+                locationStatus = QuickCaptureLocationStatus.ACQUIRED,
+                isResolvingAddress = true,
+                addressResolutionFailed = false
             )
-            val geocoded = locationService.reverseGeocode(lat, lng)
-            _uiState.value = _uiState.value.copy(
-                placeName = geocoded.first,
-                streetOrArea = if (geocoded.second.isNotBlank()) geocoded.second else _uiState.value.streetOrArea,
-                city = if (geocoded.third.isNotBlank()) geocoded.third else _uiState.value.city
-            )
+            when (val geocoded = locationService.reverseGeocodeWithStatus(lat, lng)) {
+                is com.prismpixelvertex.palatelog.core.location.GeocodeResult.Success -> {
+                    _uiState.value = _uiState.value.copy(
+                        placeName = geocoded.placeName,
+                        streetOrArea = if (geocoded.street.isNotBlank()) geocoded.street else _uiState.value.streetOrArea,
+                        city = if (geocoded.city.isNotBlank()) geocoded.city else _uiState.value.city,
+                        isResolvingAddress = false,
+                        addressResolutionFailed = false
+                    )
+                }
+                is com.prismpixelvertex.palatelog.core.location.GeocodeResult.NetworkUnavailable -> {
+                    _uiState.value = _uiState.value.copy(
+                        isResolvingAddress = false,
+                        addressResolutionFailed = true
+                    )
+                    _events.emit(QuickCaptureEvent.ShowSnackbar(
+                        message = "Network offline: Coordinates saved, but address couldn't be auto-filled.",
+                        actionLabel = "Retry"
+                    ))
+                }
+                is com.prismpixelvertex.palatelog.core.location.GeocodeResult.Failed -> {
+                    _uiState.value = _uiState.value.copy(
+                        isResolvingAddress = false,
+                        addressResolutionFailed = true
+                    )
+                }
+            }
             checkNearbyRestaurant(lat, lng)
+        }
+    }
+
+    fun retryResolveAddress() {
+        val lat = _uiState.value.latitude
+        val lng = _uiState.value.longitude
+        if (lat != 0.0 && lng != 0.0) {
+            onLocationPicked(lat, lng)
         }
     }
 

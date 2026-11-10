@@ -1,5 +1,7 @@
 package com.prismpixelvertex.palatelog.feature.quick_capture
 
+import android.content.Intent
+import android.provider.Settings
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -8,6 +10,7 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.consumeWindowInsets
@@ -28,8 +31,10 @@ import androidx.compose.material.icons.filled.Block
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.FlashOn
+import androidx.compose.material.icons.filled.LocationOff
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Map
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -42,17 +47,23 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Snackbar
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -63,7 +74,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import kotlinx.coroutines.launch
 import com.prismpixelvertex.palatelog.R
+import com.prismpixelvertex.palatelog.core.designsystem.AmberPrimary
 import com.prismpixelvertex.palatelog.core.designsystem.Dimens
 import com.prismpixelvertex.palatelog.core.designsystem.LocationPickerDialog
 import com.prismpixelvertex.palatelog.core.designsystem.VerdictCautionAmber
@@ -86,6 +102,23 @@ fun QuickCaptureScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                if (uiState.locationStatus == QuickCaptureLocationStatus.LOCATION_DISABLED) {
+                    viewModel.acquireLocation()
+                }
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
 
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
@@ -97,11 +130,52 @@ fun QuickCaptureScreen(
                 is QuickCaptureEvent.Error -> {
                     Toast.makeText(context, event.message, Toast.LENGTH_LONG).show()
                 }
+                is QuickCaptureEvent.ShowSnackbar -> {
+                    coroutineScope.launch {
+                        val result = snackbarHostState.showSnackbar(
+                            message = event.message,
+                            actionLabel = event.actionLabel,
+                            withDismissAction = true
+                        )
+                        if (result == SnackbarResult.ActionPerformed) {
+                            viewModel.retryResolveAddress()
+                        }
+                    }
+                }
             }
         }
     }
 
     Scaffold(
+        snackbarHost = {
+            SnackbarHost(
+                hostState = snackbarHostState,
+                snackbar = { data ->
+                    Snackbar(
+                        action = data.visuals.actionLabel?.let { label ->
+                            {
+                                TextButton(onClick = { data.performAction() }) {
+                                    Text(label)
+                                }
+                            }
+                        },
+                        dismissAction = if (data.visuals.withDismissAction) {
+                            {
+                                TextButton(onClick = { data.dismiss() }) {
+                                    Text(
+                                        text = stringResource(R.string.action_ignore),
+                                        color = MaterialTheme.colorScheme.inversePrimary
+                                    )
+                                }
+                            }
+                        } else null,
+                        actionOnNewLine = true
+                    ) {
+                        Text(data.visuals.message)
+                    }
+                }
+            )
+        },
         topBar = {
             TopAppBar(
                 title = {
@@ -157,7 +231,10 @@ fun QuickCaptureScreen(
             LocationHeaderCard(
                 uiState = uiState,
                 onUseNearby = { viewModel.onUseNearbyRestaurant(it) },
-                onOpenMapPicker = { showMapPicker = true }
+                onOpenMapPicker = { showMapPicker = true },
+                onTurnOnLocation = { context.startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS)) },
+                onRetryLocation = { viewModel.acquireLocation() },
+                onRetryAddress = { viewModel.retryResolveAddress() }
             )
 
             if (showMapPicker) {
@@ -399,7 +476,10 @@ fun QuickCaptureScreen(
 private fun LocationHeaderCard(
     uiState: QuickCaptureUiState,
     onUseNearby: (com.prismpixelvertex.palatelog.core.database.RestaurantEntity) -> Unit,
-    onOpenMapPicker: () -> Unit
+    onOpenMapPicker: () -> Unit,
+    onTurnOnLocation: () -> Unit,
+    onRetryLocation: () -> Unit,
+    onRetryAddress: () -> Unit
 ) {
     Card(
         shape = RoundedCornerShape(16.dp),
@@ -421,34 +501,120 @@ private fun LocationHeaderCard(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier.weight(1f)
                 ) {
-                    Icon(
-                        imageVector = Icons.Default.LocationOn,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    if (uiState.isLocationLoading) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            CircularProgressIndicator(modifier = Modifier.size(14.dp), strokeWidth = 2.dp)
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                text = stringResource(R.string.quick_capture_acquiring_gps),
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
+                    when (uiState.locationStatus) {
+                        QuickCaptureLocationStatus.ACQUIRING -> {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                CircularProgressIndicator(modifier = Modifier.size(14.dp), strokeWidth = 2.dp)
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = stringResource(R.string.quick_capture_acquiring_gps),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
                         }
-                    } else {
-                        val locText = listOfNotNull(
-                            uiState.streetOrArea.ifBlank { null },
-                            uiState.city.ifBlank { null }
-                        ).joinToString(", ")
-                        Text(
-                            text = locText.ifBlank { stringResource(R.string.quick_capture_gps_acquired) },
-                            style = MaterialTheme.typography.bodySmall,
-                            fontWeight = FontWeight.Medium,
-                            color = MaterialTheme.colorScheme.onSurface
-                        )
+                        QuickCaptureLocationStatus.ACQUIRED -> {
+                            Icon(
+                                imageVector = Icons.Default.LocationOn,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
+                            val locText = listOfNotNull(
+                                uiState.streetOrArea.ifBlank { null },
+                                uiState.city.ifBlank { null }
+                            ).joinToString(", ")
+                            if (locText.isNotBlank()) {
+                                Text(
+                                    text = locText,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    fontWeight = FontWeight.Medium,
+                                    color = MaterialTheme.colorScheme.onSurface
+                                )
+                            } else {
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Text(
+                                        text = stringResource(R.string.quick_capture_gps_acquired) + " (%.4f, %.4f)".format(java.util.Locale.US, uiState.latitude, uiState.longitude),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        fontWeight = FontWeight.Medium,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+                                    if (uiState.addressResolutionFailed) {
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                        TextButton(
+                                            onClick = onRetryAddress,
+                                            contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp),
+                                            modifier = Modifier.height(24.dp)
+                                        ) {
+                                            if (uiState.isResolvingAddress) {
+                                                CircularProgressIndicator(modifier = Modifier.size(10.dp), strokeWidth = 1.5.dp)
+                                            } else {
+                                                Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(12.dp))
+                                                Spacer(modifier = Modifier.width(2.dp))
+                                                Text(stringResource(R.string.quick_capture_retry_address), fontSize = 11.sp)
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        QuickCaptureLocationStatus.LOCATION_DISABLED -> {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector = Icons.Default.LocationOff,
+                                    contentDescription = null,
+                                    tint = AmberPrimary,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = stringResource(R.string.quick_capture_location_disabled),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = AmberPrimary
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Button(
+                                    onClick = onTurnOnLocation,
+                                    shape = RoundedCornerShape(12.dp),
+                                    contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+                                    modifier = Modifier.height(26.dp),
+                                    colors = ButtonDefaults.buttonColors(containerColor = AmberPrimary)
+                                ) {
+                                    Text(
+                                        text = stringResource(R.string.quick_capture_location_turn_on),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onPrimary
+                                    )
+                                }
+                            }
+                        }
+                        QuickCaptureLocationStatus.FAILED -> {
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(
+                                    imageVector = Icons.Default.LocationOff,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = stringResource(R.string.quick_capture_location_unavailable),
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                TextButton(
+                                    onClick = onRetryLocation,
+                                    contentPadding = PaddingValues(horizontal = 6.dp, vertical = 0.dp),
+                                    modifier = Modifier.height(26.dp)
+                                ) {
+                                    Text(stringResource(R.string.action_retry), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                                }
+                            }
+                        }
                     }
                 }
 
