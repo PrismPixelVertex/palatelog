@@ -22,7 +22,9 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
+import android.util.Log
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -232,7 +234,8 @@ class GoogleDriveSyncClient @Inject constructor(
     }
 
     /**
-     * Uploads or updates the single canonical sync file for this device (changes_<deviceId>.json).
+     * Uploads or updates the single canonical sync file for this device (changes_<deviceId>.json)
+     * with automatic retry for transient network timeouts.
      */
     suspend fun uploadOrUpdateSyncPayload(
         accessToken: String,
@@ -240,13 +243,27 @@ class GoogleDriveSyncClient @Inject constructor(
         deviceId: String,
         jsonContent: String
     ): Boolean {
-        val existingFile = findSyncFileForDevice(accessToken, folderId, deviceId)
-        val targetName = "changes_$deviceId.json"
-        return if (existingFile != null) {
-            updateSyncPayloadFile(accessToken, existingFile.id, jsonContent)
-        } else {
-            uploadSyncPayload(accessToken, folderId, targetName, jsonContent)
+        var lastException: Exception? = null
+        for (attempt in 1..2) {
+            try {
+                val existingFile = findSyncFileForDevice(accessToken, folderId, deviceId)
+                val targetName = "changes_$deviceId.json"
+                return if (existingFile != null) {
+                    updateSyncPayloadFile(accessToken, existingFile.id, jsonContent)
+                } else {
+                    uploadSyncPayload(accessToken, folderId, targetName, jsonContent)
+                }
+            } catch (e: Exception) {
+                lastException = e
+                if (attempt < 2 && (e is io.ktor.client.plugins.HttpRequestTimeoutException || e is IOException)) {
+                    Log.w("GoogleDriveSyncClient", "Payload upload attempt $attempt failed with ${e.message}. Retrying in 1.5s...")
+                    delay(1500)
+                } else {
+                    throw e
+                }
+            }
         }
+        throw lastException ?: IOException("Failed to upload or update sync payload")
     }
 
     /**

@@ -21,9 +21,9 @@ object NetworkModule {
     fun provideHttpClient(): HttpClient {
         return HttpClient(OkHttp) {
             install(HttpTimeout) {
-                requestTimeoutMillis = 30_000
-                connectTimeoutMillis = 15_000
-                socketTimeoutMillis = 30_000
+                requestTimeoutMillis = 60_000
+                connectTimeoutMillis = 20_000
+                socketTimeoutMillis = 45_000
             }
             install(ContentNegotiation) {
                 json(Json {

@@ -5,6 +5,24 @@ All notable changes to PalateLog will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.27] - 2026-11-10
+
+### Changed & Enhanced (AGP 9.5.1, Gradle 9.6.0 & Dependency Compatibility Upgrade)
+- **Toolchain & Dependency Compatibility**:
+  - Upgraded Android Gradle Plugin to 9.5.1 and Gradle Wrapper to 9.6.0.
+  - Upgraded KSP to 2.3.6 and Dagger/Hilt to 2.60.1 (resolving KSP2 XProcessing JVM signature analyzer failure).
+  - Upgraded Room to 2.8.5 with full KSP2 compatibility.
+  - Upgraded AndroidX dependencies (`core-ktx` to 1.19.1, `lifecycle` to 2.11.0, `navigation-compose` to 2.10.2, `compose-bom` to 2026.09.00).
+  - Upgraded third-party dependencies (`play-services-location` to 21.4.0, `kotlinx.coroutines` to 1.11.0, `kotlinx.serialization` to 1.9.0, `coil3` to 3.3.0, `ktor` to 3.3.0, `mappls-bom` to 2.0.4).
+- **AGP 9 & Gradle 9.6 DSL Modernization**:
+  - Migrated `tasks.registering` to `tasks.register("ensureMapplsConfigFiles")` with task description.
+  - Replaced deprecated `android { kotlinOptions { jvmTarget = "17" } }` with `kotlin { compilerOptions { jvmTarget.set(JvmTarget.JVM_17) } }`.
+  - Added `testOptions.unitTests.isIncludeAndroidResources = true` in `app/build.gradle.kts` and `android.onlyEnableUnitTestForTheTestedBuildType=false` in `gradle.properties` to ensure AGP 9.5+ Compose Preview runfile tasks configure successfully across all variants.
+  - Enabled R8 optimized resource shrinking (`android.r8.optimizedResourceShrinking=true`) in `gradle.properties` to optimize release APK binary size and eliminate the AGP 10 deprecation warning.
+- **Sync Reliability & Timeout Resilience**:
+  - Increased Ktor HTTP timeouts in `NetworkModule` (`requestTimeoutMillis = 60s`, `socketTimeoutMillis = 45s`, `connectTimeoutMillis = 20s`) to provide sufficient headroom for Google Drive media uploads over cellular connections.
+  - Added 1-time automatic retry with backoff for transient timeouts and socket disconnections during sync payload uploads in `GoogleDriveSyncClient`.
+
 ## [1.2.26] - 2026-11-10
 
 ### Fixed & Enhanced (Location & Offline Error Recovery UX)
