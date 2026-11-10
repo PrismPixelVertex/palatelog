@@ -111,7 +111,12 @@ class LocationClient @Inject constructor(
 
                 if (address != null) {
                     val placeName = address.featureName ?: address.subLocality ?: address.locality ?: ""
-                    val street = address.thoroughfare ?: address.subLocality ?: ""
+                    val street = address.thoroughfare
+                        ?: address.subLocality
+                        ?: address.subAdminArea
+                        ?: address.getAddressLine(0)?.split(",")?.firstOrNull()?.trim()
+                        ?: address.featureName
+                        ?: ""
                     val city = address.locality ?: address.subAdminArea ?: address.adminArea ?: ""
                     Triple(placeName, street, city)
                 } else {

@@ -151,6 +151,7 @@ fun RestaurantDetailScreen(
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
     var visitToEdit by remember { mutableStateOf<VisitEntry?>(null) }
     var visitToDelete by remember { mutableStateOf<VisitEntry?>(null) }
+    var dishToDelete by remember { mutableStateOf<DishFeedback?>(null) }
     var selectedPhotoForPreview by remember { mutableStateOf<String?>(null) }
 
     Scaffold(
@@ -346,7 +347,8 @@ fun RestaurantDetailScreen(
                             title = stringResource(R.string.restaurant_detail_dishes_avoid),
                             dishes = uiState.avoidDishes,
                             accentColor = VerdictNoGoRed,
-                            onPhotoClick = { selectedPhotoForPreview = it }
+                            onPhotoClick = { selectedPhotoForPreview = it },
+                            onDeleteDish = { dishToDelete = it }
                         )
                     }
 
@@ -356,7 +358,8 @@ fun RestaurantDetailScreen(
                             title = stringResource(R.string.restaurant_detail_dishes_must_try),
                             dishes = uiState.mustTryDishes,
                             accentColor = VerdictGoGreen,
-                            onPhotoClick = { selectedPhotoForPreview = it }
+                            onPhotoClick = { selectedPhotoForPreview = it },
+                            onDeleteDish = { dishToDelete = it }
                         )
                     }
 
@@ -366,7 +369,8 @@ fun RestaurantDetailScreen(
                             title = stringResource(R.string.restaurant_detail_dishes_neutral),
                             dishes = uiState.neutralDishes,
                             accentColor = VerdictCautionAmber,
-                            onPhotoClick = { selectedPhotoForPreview = it }
+                            onPhotoClick = { selectedPhotoForPreview = it },
+                            onDeleteDish = { dishToDelete = it }
                         )
                     }
                 }
@@ -518,10 +522,27 @@ fun RestaurantDetailScreen(
 
     // Dialog: Delete Visit Confirmation
     visitToDelete?.let { visit ->
+        val linkedDishes = uiState.allDishes.filter { it.visitId == visit.id }
+        val linkedDishCount = linkedDishes.size
+        val linkedPhotoCount = visit.photoUris.size + linkedDishes.sumOf { it.photoUris.size }
+        val dialogMsg = when {
+            linkedDishCount > 0 && linkedPhotoCount > 0 -> {
+                stringResource(R.string.restaurant_detail_delete_visit_dialog_msg_with_dishes_and_photos, linkedDishCount, linkedPhotoCount)
+            }
+            linkedDishCount > 0 -> {
+                stringResource(R.string.restaurant_detail_delete_visit_dialog_msg_with_dishes, linkedDishCount)
+            }
+            linkedPhotoCount > 0 -> {
+                stringResource(R.string.restaurant_detail_delete_visit_dialog_msg_with_photos, linkedPhotoCount)
+            }
+            else -> {
+                stringResource(R.string.restaurant_detail_delete_visit_dialog_msg)
+            }
+        }
         AlertDialog(
             onDismissRequest = { visitToDelete = null },
             title = { Text(stringResource(R.string.restaurant_detail_delete_visit_dialog_title)) },
-            text = { Text(stringResource(R.string.restaurant_detail_delete_visit_dialog_msg)) },
+            text = { Text(dialogMsg) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -535,6 +556,31 @@ fun RestaurantDetailScreen(
             },
             dismissButton = {
                 TextButton(onClick = { visitToDelete = null }) {
+                    Text(stringResource(R.string.action_cancel))
+                }
+            }
+        )
+    }
+
+    // Dialog: Delete Dish Confirmation
+    dishToDelete?.let { dish ->
+        AlertDialog(
+            onDismissRequest = { dishToDelete = null },
+            title = { Text(stringResource(R.string.restaurant_detail_delete_dish_dialog_title)) },
+            text = { Text(stringResource(R.string.restaurant_detail_delete_dish_dialog_msg, dish.dishName)) },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.deleteDish(dish.id)
+                        Toast.makeText(context, context.getString(R.string.restaurant_detail_dish_deleted_toast), Toast.LENGTH_SHORT).show()
+                        dishToDelete = null
+                    }
+                ) {
+                    Text(stringResource(R.string.action_delete), color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { dishToDelete = null }) {
                     Text(stringResource(R.string.action_cancel))
                 }
             }
@@ -1125,7 +1171,8 @@ private fun DishVerdictGroup(
     title: String,
     dishes: List<DishFeedback>,
     accentColor: Color,
-    onPhotoClick: (String) -> Unit
+    onPhotoClick: (String) -> Unit,
+    onDeleteDish: ((DishFeedback) -> Unit)? = null
 ) {
     Card(
         shape = RoundedCornerShape(16.dp),
@@ -1150,9 +1197,26 @@ private fun DishVerdictGroup(
                         Text(
                             text = dish.dishName,
                             style = MaterialTheme.typography.bodyLarge,
-                            fontWeight = FontWeight.SemiBold
+                            fontWeight = FontWeight.SemiBold,
+                            modifier = Modifier.weight(1f)
                         )
-                        DishVerdictBadge(verdict = dish.verdict)
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            DishVerdictBadge(verdict = dish.verdict)
+                            if (onDeleteDish != null) {
+                                Spacer(modifier = Modifier.width(4.dp))
+                                IconButton(
+                                    onClick = { onDeleteDish(dish) },
+                                    modifier = Modifier.size(24.dp)
+                                ) {
+                                    Icon(
+                                        Icons.Default.Delete,
+                                        contentDescription = "Delete dish",
+                                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
+                                        modifier = Modifier.size(16.dp)
+                                    )
+                                }
+                            }
+                        }
                     }
 
                     if (dish.tags.isNotEmpty()) {

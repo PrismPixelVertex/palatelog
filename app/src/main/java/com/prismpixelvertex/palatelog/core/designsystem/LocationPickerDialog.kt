@@ -37,9 +37,11 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.google.android.gms.location.LocationServices
 import com.prismpixelvertex.palatelog.R
 import java.util.Locale
 
@@ -47,10 +49,13 @@ import java.util.Locale
 fun LocationPickerDialog(
     initialLatitude: Double,
     initialLongitude: Double,
+    userGpsLatitude: Double? = null,
+    userGpsLongitude: Double? = null,
     onDismiss: () -> Unit,
     onLocationConfirmed: (latitude: Double, longitude: Double) -> Unit
 ) {
     val context = LocalContext.current
+    val fusedLocationClient = remember(context) { LocationServices.getFusedLocationProviderClient(context) }
 
     // Default fallback coordinates if invalid (Bangalore default or given initial)
     val startLat = if (initialLatitude != 0.0) initialLatitude else 12.9716
@@ -60,6 +65,7 @@ fun LocationPickerDialog(
     var selectedLng by remember { mutableDoubleStateOf(startLng) }
     var centerLat by remember { mutableDoubleStateOf(startLat) }
     var centerLng by remember { mutableDoubleStateOf(startLng) }
+    var animationTrigger by remember { mutableLongStateOf(0L) }
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -124,6 +130,7 @@ fun LocationPickerDialog(
                         centerLatitude = centerLat,
                         centerLongitude = centerLng,
                         zoomLevel = 16.0,
+                        animationTrigger = animationTrigger,
                         markers = listOf(
                             PalateMapMarker(
                                 id = "SELECTED_PIN",
@@ -144,11 +151,38 @@ fun LocationPickerDialog(
                         }
                     )
 
-                    // Re-center on pin button
+                    // Re-center on user's current GPS location button
                     FloatingActionButton(
                         onClick = {
-                            centerLat = selectedLat
-                            centerLng = selectedLng
+                            try {
+                                fusedLocationClient.lastLocation.addOnSuccessListener { loc ->
+                                    if (loc != null) {
+                                        centerLat = loc.latitude
+                                        centerLng = loc.longitude
+                                        selectedLat = loc.latitude
+                                        selectedLng = loc.longitude
+                                        animationTrigger = System.currentTimeMillis()
+                                    } else if (userGpsLatitude != null && userGpsLongitude != null && userGpsLatitude != 0.0) {
+                                        centerLat = userGpsLatitude
+                                        centerLng = userGpsLongitude
+                                        selectedLat = userGpsLatitude
+                                        selectedLng = userGpsLongitude
+                                        animationTrigger = System.currentTimeMillis()
+                                    } else {
+                                        centerLat = selectedLat
+                                        centerLng = selectedLng
+                                        animationTrigger = System.currentTimeMillis()
+                                    }
+                                }
+                            } catch (_: SecurityException) {
+                                if (userGpsLatitude != null && userGpsLongitude != null && userGpsLatitude != 0.0) {
+                                    centerLat = userGpsLatitude
+                                    centerLng = userGpsLongitude
+                                    selectedLat = userGpsLatitude
+                                    selectedLng = userGpsLongitude
+                                    animationTrigger = System.currentTimeMillis()
+                                }
+                            }
                         },
                         containerColor = MaterialTheme.colorScheme.surface,
                         contentColor = MaterialTheme.colorScheme.primary,

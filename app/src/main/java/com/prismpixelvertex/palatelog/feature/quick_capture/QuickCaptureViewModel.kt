@@ -132,6 +132,7 @@ class QuickCaptureViewModel @Inject constructor(
             )
             val geocoded = locationService.reverseGeocode(lat, lng)
             _uiState.value = _uiState.value.copy(
+                placeName = geocoded.first,
                 streetOrArea = if (geocoded.second.isNotBlank()) geocoded.second else _uiState.value.streetOrArea,
                 city = if (geocoded.third.isNotBlank()) geocoded.third else _uiState.value.city
             )
