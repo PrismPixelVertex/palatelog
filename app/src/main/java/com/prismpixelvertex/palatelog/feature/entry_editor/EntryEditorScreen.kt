@@ -52,6 +52,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Snackbar
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -87,6 +88,13 @@ import com.prismpixelvertex.palatelog.core.designsystem.VerdictGoGreenContainer
 import com.prismpixelvertex.palatelog.core.designsystem.VerdictNoGoRed
 import com.prismpixelvertex.palatelog.core.designsystem.VerdictNoGoRedContainer
 import com.prismpixelvertex.palatelog.core.model.Channel
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import com.prismpixelvertex.palatelog.core.model.DishVerdict
 import com.prismpixelvertex.palatelog.core.model.Verdict
 import com.prismpixelvertex.palatelog.core.util.MediaUtils
@@ -102,6 +110,8 @@ fun EntryEditorScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+    val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
@@ -113,11 +123,52 @@ fun EntryEditorScreen(
                 is EntryEditorEvent.Error -> {
                     Toast.makeText(context, event.message, Toast.LENGTH_LONG).show()
                 }
+                is EntryEditorEvent.ShowSnackbar -> {
+                    coroutineScope.launch {
+                        val result = snackbarHostState.showSnackbar(
+                            message = event.message,
+                            actionLabel = event.actionLabel,
+                            withDismissAction = true
+                        )
+                        if (result == SnackbarResult.ActionPerformed) {
+                            viewModel.retryResolveAddress()
+                        }
+                    }
+                }
             }
         }
     }
 
     Scaffold(
+        snackbarHost = {
+            SnackbarHost(
+                hostState = snackbarHostState,
+                snackbar = { data ->
+                    Snackbar(
+                        action = data.visuals.actionLabel?.let { label ->
+                            {
+                                TextButton(onClick = { data.performAction() }) {
+                                    Text(label)
+                                }
+                            }
+                        },
+                        dismissAction = if (data.visuals.withDismissAction) {
+                            {
+                                TextButton(onClick = { data.dismiss() }) {
+                                    Text(
+                                        text = stringResource(R.string.action_ignore),
+                                        color = MaterialTheme.colorScheme.inversePrimary
+                                    )
+                                }
+                            }
+                        } else null,
+                        actionOnNewLine = true
+                    ) {
+                        Text(data.visuals.message)
+                    }
+                }
+            )
+        },
         topBar = {
             TopAppBar(
                 title = {
@@ -215,6 +266,9 @@ fun EntryEditorScreen(
                     onValueChange = { viewModel.onAddressChanged(it) },
                     label = { Text(stringResource(R.string.entry_editor_field_address)) },
                     placeholder = { Text(stringResource(R.string.entry_editor_address_placeholder)) },
+                    trailingIcon = if (uiState.isResolvingAddress) {
+                        { CircularProgressIndicator(modifier = Modifier.size(16.dp), strokeWidth = 2.dp) }
+                    } else null,
                     singleLine = true,
                     shape = RoundedCornerShape(12.dp),
                     modifier = Modifier.weight(1f)
@@ -246,6 +300,29 @@ fun EntryEditorScreen(
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                    if (uiState.addressResolutionFailed && uiState.address.isBlank()) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(6.dp))
+                                .clickable { viewModel.retryResolveAddress() }
+                                .padding(vertical = 2.dp)
+                        ) {
+                            if (uiState.isResolvingAddress) {
+                                CircularProgressIndicator(modifier = Modifier.size(12.dp), strokeWidth = 1.5.dp)
+                            } else {
+                                Icon(Icons.Default.Refresh, contentDescription = null, tint = AmberPrimary, modifier = Modifier.size(14.dp))
+                            }
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = stringResource(R.string.entry_editor_retry_address_desc),
+                                style = MaterialTheme.typography.labelSmall,
+                                color = AmberPrimary,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                    }
                 }
 
                 OutlinedButton(

@@ -19,6 +19,7 @@ import com.prismpixelvertex.palatelog.core.model.DishVerdict
 import com.prismpixelvertex.palatelog.core.model.FamilyMember
 import com.prismpixelvertex.palatelog.core.model.RestaurantType
 import com.prismpixelvertex.palatelog.core.model.Verdict
+import com.prismpixelvertex.palatelog.R
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -59,6 +60,8 @@ data class EntryEditorUiState(
     val highwayOrRoute: String = "",
     val latitude: Double = 0.0,
     val longitude: Double = 0.0,
+    val isResolvingAddress: Boolean = false,
+    val addressResolutionFailed: Boolean = false,
     val billAmountText: String = "",
     val visitPhotoUris: List<String> = emptyList(),
     val generalNotes: String = "",
@@ -71,6 +74,7 @@ data class EntryEditorUiState(
 sealed interface EntryEditorEvent {
     object SavedSuccessfully : EntryEditorEvent
     data class Error(val message: String) : EntryEditorEvent
+    data class ShowSnackbar(val message: String, val actionLabel: String? = null) : EntryEditorEvent
 }
 
 @HiltViewModel
@@ -221,17 +225,51 @@ class EntryEditorViewModel @Inject constructor(
 
     fun onLocationPicked(lat: Double, lng: Double) {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(latitude = lat, longitude = lng)
-            val geocoded = locationService.reverseGeocode(lat, lng)
-            val resolvedAddress = when {
-                geocoded.second.isNotBlank() -> geocoded.second
-                geocoded.first.isNotBlank() -> geocoded.first
-                else -> _uiState.value.address
-            }
             _uiState.value = _uiState.value.copy(
-                address = resolvedAddress,
-                city = if (geocoded.third.isNotBlank()) geocoded.third else _uiState.value.city
+                latitude = lat,
+                longitude = lng,
+                isResolvingAddress = true,
+                addressResolutionFailed = false
             )
+            when (val geocoded = locationService.reverseGeocodeWithStatus(lat, lng)) {
+                is com.prismpixelvertex.palatelog.core.location.GeocodeResult.Success -> {
+                    val resolvedAddress = when {
+                        geocoded.street.isNotBlank() -> geocoded.street
+                        geocoded.placeName.isNotBlank() -> geocoded.placeName
+                        else -> _uiState.value.address
+                    }
+                    _uiState.value = _uiState.value.copy(
+                        address = resolvedAddress,
+                        city = if (geocoded.city.isNotBlank()) geocoded.city else _uiState.value.city,
+                        isResolvingAddress = false,
+                        addressResolutionFailed = false
+                    )
+                }
+                is com.prismpixelvertex.palatelog.core.location.GeocodeResult.NetworkUnavailable -> {
+                    _uiState.value = _uiState.value.copy(
+                        isResolvingAddress = false,
+                        addressResolutionFailed = true
+                    )
+                    _events.emit(EntryEditorEvent.ShowSnackbar(
+                        message = context.getString(R.string.entry_editor_network_offline_address_failed),
+                        actionLabel = context.getString(R.string.action_retry)
+                    ))
+                }
+                is com.prismpixelvertex.palatelog.core.location.GeocodeResult.Failed -> {
+                    _uiState.value = _uiState.value.copy(
+                        isResolvingAddress = false,
+                        addressResolutionFailed = true
+                    )
+                }
+            }
+        }
+    }
+
+    fun retryResolveAddress() {
+        val lat = _uiState.value.latitude
+        val lng = _uiState.value.longitude
+        if (lat != 0.0 && lng != 0.0) {
+            onLocationPicked(lat, lng)
         }
     }
 

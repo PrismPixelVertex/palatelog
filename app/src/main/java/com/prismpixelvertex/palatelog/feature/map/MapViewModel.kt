@@ -31,7 +31,8 @@ data class MapUiState(
     val selectedRestaurant: Restaurant? = null,
     val selectedDistanceKm: Double? = null,
     val selectedCustomLocation: SelectedCustomLocation? = null,
-    val isLocationReady: Boolean = false
+    val isLocationReady: Boolean = false,
+    val isLocationDisabled: Boolean = false
 )
 
 @HiltViewModel
@@ -43,13 +44,15 @@ class MapViewModel @Inject constructor(
     private val _userLocation = MutableStateFlow<Pair<Double, Double>?>(null)
     private val _selectedRestaurant = MutableStateFlow<Restaurant?>(null)
     private val _selectedCustomLocation = MutableStateFlow<SelectedCustomLocation?>(null)
+    private val _isLocationDisabled = MutableStateFlow(false)
 
     val uiState: StateFlow<MapUiState> = combine(
         restaurantDao.getAllRestaurants(),
         _userLocation,
         _selectedRestaurant,
-        _selectedCustomLocation
-    ) { restaurantEntities, userLoc, selectedRest, selectedCustom ->
+        _selectedCustomLocation,
+        _isLocationDisabled
+    ) { restaurantEntities, userLoc, selectedRest, selectedCustom, isLocDisabled ->
         val domainRestaurants = restaurantEntities.map { it.toDomain() }
         val dist = if (selectedRest != null && userLoc != null) {
             GeoUtils.calculateDistanceKm(userLoc.first, userLoc.second, selectedRest.latitude, selectedRest.longitude)
@@ -62,7 +65,8 @@ class MapViewModel @Inject constructor(
             selectedRestaurant = selectedRest,
             selectedDistanceKm = dist,
             selectedCustomLocation = selectedCustom,
-            isLocationReady = userLoc != null
+            isLocationReady = userLoc != null,
+            isLocationDisabled = isLocDisabled
         )
     }.stateIn(
         scope = viewModelScope,
@@ -75,10 +79,16 @@ class MapViewModel @Inject constructor(
     }
 
     fun loadLocation() {
+        val enabled = locationService.isLocationEnabled()
+        _isLocationDisabled.value = !enabled
+        if (!enabled) {
+            return
+        }
         viewModelScope.launch {
             val loc = locationService.getCurrentLocation()
             if (loc != null) {
                 _userLocation.value = Pair(loc.latitude, loc.longitude)
+                _isLocationDisabled.value = false
             }
         }
     }

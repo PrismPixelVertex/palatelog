@@ -5,6 +5,24 @@ All notable changes to PalateLog will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.26] - 2026-11-10
+
+### Fixed & Enhanced (Location & Offline Error Recovery UX)
+- **Map View Location Off Alert & Direct Action**:
+  - Added real-time detection of system location service state in `MapViewModel` via `LocationService.isLocationEnabled()`.
+  - Added a top floating warning pill in `MapScreen` when location service is turned off, providing a 1-tap "Turn On" action directly launching Android's system location settings.
+  - Added actionable Snackbar feedback on the "My Location" Floating Action Button in `MapScreen` prompting the user when location is disabled.
+  - Added lifecycle resumption observation in `MapScreen` to automatically clear the warning and acquire user coordinates immediately when returning from system settings.
+- **Quick Regret Logger Location Status Accuracy**:
+  - Replaced the erroneous fallback that displayed "GPS Location Acquired" when location was off with explicit state tracking (`QuickCaptureLocationStatus`).
+  - Added a dedicated warning and "Turn On" action in `QuickCaptureScreen` when location is turned off.
+  - Retained coordinates in state and rendered precise coordinate readout when GPS is fixed but geocoding is unavailable.
+- **Resilient Reverse Geocoding & Offline Error Recovery**:
+  - Added automatic 2-attempt retry with backoff in `LocationClient.reverseGeocodeWithStatus` to gracefully handle transient network glitches and cell tower handovers during highway drives.
+  - Added a non-intrusive offline indicator badge in `LocationPickerDialog` to set expectations when network connectivity is unavailable.
+  - Added an actionable dual-action Snackbar (`Retry` and `Ignore`) when reverse geocoding encounters network disconnection.
+  - Added an inline "Tap to fetch address" helper chip in `EntryEditorScreen` and `QuickCaptureScreen` so users can easily re-run address resolution once signal returns without needing to re-open the map dialog.
+
 ## [1.2.25] - 2026-11-10
 
 ### Fixed & Enhanced (Location Picker, Geocoding & Relational Dish Cleanup)

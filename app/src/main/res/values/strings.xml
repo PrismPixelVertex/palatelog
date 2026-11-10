@@ -579,4 +579,22 @@
     <string name="help_card_radar_subtitle">Dynamic 500m geofencing, zero-battery trip monitoring, &amp; Quick Settings tile</string>
     <string name="help_radar_intro">Driving on the highway at 80–100 km/h? Palate Radar acts as your roadside lookout, scanning ahead to alert you 500 meters before you reach previously logged roadside regrets or favorite highway stops.</string>
     <string name="help_radar_points">• Dynamic Corridor Geofencing: Automatically checks up to 100 highway spots within 500 km of your starting GPS coordinates.\n• 500m Proximity Warnings: High-priority heads-up notification with sound and vibration gives you ample time to safely pass or take the highway exit.\n• Zero Perpetual Battery Drain: Runs strictly on-demand as a trip session while driving. It never tracks your location 24/7 in the background.\n• Quick Settings Tile: Add the \'Palate Radar\' tile to your Android notification shade for 1-tap start/stop without opening the app.\n• Regrets First by Default: Strictly warns for NO-GO regrets to prevent notification noise on the road. You can enable GO recommendations in Settings.\n• 100% On-Device Sovereignty: Your GPS coordinates are evaluated strictly on-device against your local Room database. Zero location telemetry is transmitted to any server.</string>
+
+    <!-- Location & Network Error Recovery Strings -->
+    <string name="map_location_disabled_banner">Location is turned off</string>
+    <string name="map_location_disabled_action">Turn On</string>
+    <string name="map_location_disabled_snackbar">Location is turned off. Enable GPS to view your location.</string>
+    <string name="quick_capture_location_disabled">Location is turned off</string>
+    <string name="quick_capture_location_turn_on">Turn On</string>
+    <string name="quick_capture_location_permission_needed">Location permission needed</string>
+    <string name="quick_capture_location_unavailable">Location unavailable</string>
+    <string name="quick_capture_retry_address">Fetch Address</string>
+    <string name="quick_capture_network_offline_address_failed">Network offline: Coordinates saved, but address couldn\'t be auto-filled.</string>
+    <string name="location_picker_offline_notice">Offline: Address auto-detection unavailable</string>
+    <string name="entry_editor_network_offline_address_failed">Network offline: Coordinates saved, but address couldn\'t be auto-filled.</string>
+    <string name="entry_editor_retry_address">Fetch Address</string>
+    <string name="entry_editor_retry_address_desc">Network was offline • Tap to fetch address</string>
+    <string name="action_retry">Retry</string>
+    <string name="action_ignore">Ignore</string>
+    <string name="action_settings">Settings</string>
 </resources>
