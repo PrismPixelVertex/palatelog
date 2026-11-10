@@ -1,11 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <data-extraction-rules>
-    <cloud-backup>
+    <cloud-backup disableIfNoEncryptionCapabilities="true">
         <include domain="database" path="palatelog.db" />
         <include domain="sharedpref" path="." />
+        <exclude domain="sharedpref" path="palatelog_sync_prefs.xml" />
     </cloud-backup>
     <device-transfer>
         <include domain="database" path="palatelog.db" />
         <include domain="sharedpref" path="." />
+        <exclude domain="sharedpref" path="palatelog_sync_prefs.xml" />
     </device-transfer>
 </data-extraction-rules>

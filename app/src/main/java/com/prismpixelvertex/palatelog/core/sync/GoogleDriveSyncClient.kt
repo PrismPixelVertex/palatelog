@@ -6,7 +6,6 @@ import com.google.android.gms.auth.GoogleAuthUtil
 import com.google.android.gms.auth.UserRecoverableAuthException
 import dagger.hilt.android.qualifiers.ApplicationContext
 import io.ktor.client.HttpClient
-import io.ktor.client.call.body
 import io.ktor.client.request.forms.formData
 import io.ktor.client.request.forms.submitFormWithBinaryData
 import io.ktor.client.request.get
@@ -14,7 +13,9 @@ import io.ktor.client.request.header
 import io.ktor.client.request.parameter
 import io.ktor.client.request.patch
 import io.ktor.client.request.post
+import io.ktor.client.request.prepareGet
 import io.ktor.client.request.setBody
+import io.ktor.client.statement.bodyAsChannel
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.Headers
@@ -22,6 +23,8 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
+import io.ktor.utils.io.ByteReadChannel
+import io.ktor.utils.io.copyTo
 import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -79,8 +82,16 @@ class GoogleDriveSyncClient @Inject constructor(
         ignoreUnknownKeys = true
     }
 
+    companion object {
+        const val MAX_PHOTO_SIZE_BYTES = 15L * 1024 * 1024 // 15 MB
+        const val MAX_PAYLOAD_SIZE_BYTES = 10L * 1024 * 1024 // 10 MB
+    }
+
     /**
      * Gets OAuth2 access token for Google Drive API.
+     * Note: In addition to drive.file, drive.readonly is required for Mode B (Individual Accounts)
+     * so that invited family members can discover and read the shared family sync folder created
+     * by another user's Google account without requiring a file picker UI.
      */
     suspend fun getAccessToken(accountEmail: String): String = withContext(Dispatchers.IO) {
         val scope = "oauth2:https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.readonly"
@@ -293,6 +304,7 @@ class GoogleDriveSyncClient @Inject constructor(
 
     /**
      * Downloads content of a specific sync file by fileId.
+     * Enforces a maximum payload size limit to prevent memory and storage exhaustion.
      */
     suspend fun downloadSyncPayload(
         accessToken: String,
@@ -303,9 +315,19 @@ class GoogleDriveSyncClient @Inject constructor(
             parameter("alt", "media")
         }
 
-        val responseText = response.bodyAsText()
         if (!response.status.isSuccess()) {
+            val responseText = response.bodyAsText().take(1000)
             throw IOException("Failed to download payload: HTTP ${response.status.value} - $responseText")
+        }
+
+        val declaredLength = response.headers[HttpHeaders.ContentLength]?.toLongOrNull()
+        if (declaredLength != null && declaredLength > MAX_PAYLOAD_SIZE_BYTES) {
+            throw IOException("Sync payload file $fileId exceeds maximum size limit ($declaredLength > $MAX_PAYLOAD_SIZE_BYTES bytes)")
+        }
+
+        val responseText = response.bodyAsText()
+        if (responseText.length > MAX_PAYLOAD_SIZE_BYTES) {
+            throw IOException("Sync payload file $fileId content exceeds maximum size limit")
         }
 
         responseText
@@ -420,23 +442,66 @@ class GoogleDriveSyncClient @Inject constructor(
 
     /**
      * Downloads a photo file from Google Drive directly into local device file.
+     * Streams the response to avoid OOM and enforces a strict maximum file size to prevent storage exhaustion.
      */
     suspend fun downloadPhotoFile(
         accessToken: String,
         fileId: String,
         destFile: File
     ): Boolean = withContext(Dispatchers.IO) {
-        val response = httpClient.get("https://www.googleapis.com/drive/v3/files/$fileId") {
-            header(HttpHeaders.Authorization, "Bearer $accessToken")
-            parameter("alt", "media")
-        }
+        try {
+            httpClient.prepareGet("https://www.googleapis.com/drive/v3/files/$fileId") {
+                header(HttpHeaders.Authorization, "Bearer $accessToken")
+                parameter("alt", "media")
+            }.execute { response ->
+                if (!response.status.isSuccess()) {
+                    Log.e("PalateLog_Sync", "Failed to download photo $fileId: HTTP ${response.status.value}")
+                    return@execute false
+                }
 
-        if (response.status.isSuccess()) {
-            destFile.parentFile?.let { if (!it.exists()) it.mkdirs() }
-            val bytes: ByteArray = response.body()
-            destFile.writeBytes(bytes)
-            true
-        } else {
+                val contentType = response.headers[HttpHeaders.ContentType]
+                if (contentType != null && !contentType.startsWith("image/") && !contentType.startsWith("application/octet-stream")) {
+                    Log.e("PalateLog_Sync", "Rejected photo $fileId with untrusted Content-Type: $contentType")
+                    return@execute false
+                }
+
+                val declaredLength = response.headers[HttpHeaders.ContentLength]?.toLongOrNull()
+                if (declaredLength != null && declaredLength > MAX_PHOTO_SIZE_BYTES) {
+                    Log.e("PalateLog_Sync", "Photo $fileId exceeds maximum size limit: $declaredLength bytes")
+                    return@execute false
+                }
+
+                destFile.parentFile?.let { if (!it.exists()) it.mkdirs() }
+                val tempFile = File(destFile.parentFile, "${destFile.name}.tmp_${System.currentTimeMillis()}")
+                val channel: ByteReadChannel = response.bodyAsChannel()
+
+                try {
+                    tempFile.outputStream().use { fos ->
+                        val bytesCopied = channel.copyTo(fos.channel, limit = MAX_PHOTO_SIZE_BYTES + 1)
+                        if (bytesCopied > MAX_PHOTO_SIZE_BYTES || (!channel.isClosedForRead && channel.awaitContent())) {
+                            Log.e("PalateLog_Sync", "Photo $fileId download aborted: stream exceeded $MAX_PHOTO_SIZE_BYTES bytes")
+                            return@execute false
+                        }
+                    }
+
+                    if (tempFile.renameTo(destFile)) {
+                        true
+                    } else {
+                        tempFile.copyTo(destFile, overwrite = true)
+                        tempFile.delete()
+                        true
+                    }
+                } catch (e: Exception) {
+                    tempFile.delete()
+                    throw e
+                } finally {
+                    if (tempFile.exists()) {
+                        tempFile.delete()
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("PalateLog_Sync", "Error downloading photo $fileId", e)
             false
         }
     }

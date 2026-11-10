@@ -107,19 +107,27 @@ class SyncRepository @Inject constructor(
     private fun extractPhotoFileName(uriString: String?): String? {
         if (uriString.isNullOrBlank()) return null
         val lastSegment = uriString.substringAfterLast("/")
-        return if (lastSegment.isNotBlank() && (lastSegment.endsWith(".jpg") || lastSegment.endsWith(".png") || lastSegment.endsWith(".jpeg"))) {
-            lastSegment
-        } else null
+        return SyncSecurityUtils.sanitizePhotoFileName(lastSegment)
     }
 
     private fun getLocalPhotoUri(fileName: String): String? {
-        val file = getLocalPhotoFile(fileName)
+        val file = getLocalPhotoFile(fileName) ?: return null
         return if (file.exists()) android.net.Uri.fromFile(file).toString() else null
     }
 
-    private fun getLocalPhotoFile(fileName: String): File {
-        val photosDir = File(context.filesDir, "photos")
-        return File(photosDir, fileName)
+    private fun getLocalPhotoFile(fileName: String): File? {
+        val cleanName = SyncSecurityUtils.sanitizePhotoFileName(fileName)
+        if (cleanName == null) {
+            Log.w("PalateLog_Sync", "Unsafe or invalid photo file name rejected: $fileName")
+            return null
+        }
+        val photosDir = File(context.filesDir, "photos").apply { if (!exists()) mkdirs() }
+        val targetFile = File(photosDir, cleanName)
+        if (!SyncSecurityUtils.isPathWithinDirectory(targetFile, photosDir)) {
+            Log.w("PalateLog_Sync", "Path traversal detected for photo name: $fileName")
+            return null
+        }
+        return targetFile
     }
 
     /**
@@ -229,7 +237,7 @@ class SyncRepository @Inject constructor(
                         for (visit in remotePayload.visits) {
                             val visitPhotoNames = if (visit.photoNames.isNotEmpty()) visit.photoNames else listOfNotNull(visit.billReceiptPhotoName)
                             for (photoName in visitPhotoNames) {
-                                val localFile = getLocalPhotoFile(photoName)
+                                val localFile = getLocalPhotoFile(photoName) ?: continue
                                 if (!localFile.exists()) {
                                     remotePhotoMap[photoName]?.let { driveFile ->
                                         val success = googleDriveSyncClient.downloadPhotoFile(accessToken, driveFile.id, localFile)
@@ -245,7 +253,7 @@ class SyncRepository @Inject constructor(
                         }
                         for (dish in remotePayload.dishes) {
                             for (photoName in dish.photoNames) {
-                                val localFile = getLocalPhotoFile(photoName)
+                                val localFile = getLocalPhotoFile(photoName) ?: continue
                                 if (!localFile.exists()) {
                                     remotePhotoMap[photoName]?.let { driveFile ->
                                         val success = googleDriveSyncClient.downloadPhotoFile(accessToken, driveFile.id, localFile)
@@ -282,7 +290,7 @@ class SyncRepository @Inject constructor(
 
                 for (photoName in localPhotoNames) {
                     if (!remotePhotoMap.containsKey(photoName)) {
-                        val localFile = getLocalPhotoFile(photoName)
+                        val localFile = getLocalPhotoFile(photoName) ?: continue
                         if (localFile.exists()) {
                             try {
                                 val bytes = localFile.readBytes()

@@ -2,4 +2,5 @@
 <full-backup-content>
     <include domain="database" path="palatelog.db" />
     <include domain="sharedpref" path="." />
+    <exclude domain="sharedpref" path="palatelog_sync_prefs.xml" />
 </full-backup-content>
