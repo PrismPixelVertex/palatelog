@@ -406,7 +406,7 @@ class SyncRepository @Inject constructor(
                     }
                 }
 
-                val details = formatSyncDigestDetails(relevantRestaurants, allNewDishes)
+                val details = formatSyncDigestDetails(relevantRestaurants, allNewDishes, context = context)
                 notificationManager.postFamilySyncDigest(summary, details)
             }
 
@@ -635,15 +635,16 @@ class SyncRepository @Inject constructor(
         fun formatSyncDigestDetails(
             restaurants: List<SyncRestaurant>,
             dishes: List<SyncDish>,
+            context: Context? = null,
             maxLines: Int = 5
         ): List<String> {
             val details = mutableListOf<String>()
             val distinctRestaurants = restaurants.distinctBy { it.id }.take(3)
             for (restaurant in distinctRestaurants) {
                 val verdictLabel = when (restaurant.overallVerdict.uppercase()) {
-                    "NO_GO" -> "NO-GO"
-                    "GO" -> "GO"
-                    "CAUTION" -> "CAUTION"
+                    "NO_GO" -> context?.getString(R.string.verdict_no_go) ?: "NO-GO"
+                    "GO" -> context?.getString(R.string.verdict_go) ?: "GO"
+                    "CAUTION" -> context?.getString(R.string.verdict_caution) ?: "CAUTION"
                     else -> restaurant.overallVerdict.replace('_', '-')
                 }
                 details.add("📍 ${restaurant.name} [$verdictLabel]")
