@@ -17,9 +17,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Resolved verdict text directly from centralized string resources (`R.string.verdict_go`, `R.string.verdict_no_go`, `R.string.verdict_caution`) for localization readiness and consistency.
   - Preserved color circle indicators for dish verdicts: `🟢` for GO (Must-Try), `🔴` for NO-GO (Avoid), and `🟡` for MEH/Caution.
   - Added `SyncRepository.formatSyncDigestDetails()` and unit test coverage in `PalateNotificationManagerTest` verifying verdict formatting, line capping, and deduplication.
-- **Offline & Network Error Isolation (`GoogleDriveSyncClient` & `SyncRepository`)**:
+- **Offline & Network Error Isolation (`GoogleDriveSyncClient`, `SyncRepository`, & `SettingsViewModel`)**:
   - Differentiated transient `IOException` (offline/network drops) from genuine authentication failures (`GoogleAuthException`) during OAuth token retrieval.
   - Eliminated false "Google Drive authorization expired" notification alerts when syncing while offline or in Airplane mode, displaying an in-app offline toast message instead while keeping notification shade silent.
+  - Extracted offline toast messages (`R.string.settings_sync_offline` and `R.string.settings_sync_offline_retry`) into `strings.xml` for full localization.
 
 ## [1.2.29] - 2026-11-11
 
