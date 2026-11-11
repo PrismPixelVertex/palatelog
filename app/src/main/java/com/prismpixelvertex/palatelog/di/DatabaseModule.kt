@@ -27,7 +27,7 @@ object DatabaseModule {
             context,
             PalateLogDatabase::class.java,
             "palatelog.db"
-        ).fallbackToDestructiveMigration()
+        ).fallbackToDestructiveMigration(dropAllTables = true)
             .build()
     }
 

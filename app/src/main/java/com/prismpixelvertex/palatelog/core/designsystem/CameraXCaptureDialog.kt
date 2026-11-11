@@ -31,12 +31,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
@@ -60,8 +62,11 @@ fun CameraXCaptureDialog(
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
+    val locale = LocalConfiguration.current.locales[0]
+    val captureErrorFormat = stringResource(R.string.camera_capture_error)
+    val prepareErrorFormat = stringResource(R.string.camera_prepare_error)
 
-    var lensFacing by remember { mutableStateOf(CameraSelector.LENS_FACING_BACK) }
+    var lensFacing by remember { mutableIntStateOf(CameraSelector.LENS_FACING_BACK) }
     var isCapturing by remember { mutableStateOf(false) }
 
     val imageCapture = remember {
@@ -198,7 +203,7 @@ fun CameraXCaptureDialog(
                                             isCapturing = false
                                             Toast.makeText(
                                                 context,
-                                                context.getString(R.string.camera_capture_error, exception.localizedMessage ?: ""),
+                                                String.format(locale, captureErrorFormat, exception.localizedMessage ?: ""),
                                                 Toast.LENGTH_SHORT
                                             ).show()
                                         }
@@ -208,7 +213,7 @@ fun CameraXCaptureDialog(
                                 isCapturing = false
                                 Toast.makeText(
                                     context,
-                                    context.getString(R.string.camera_prepare_error, e.localizedMessage ?: ""),
+                                    String.format(locale, prepareErrorFormat, e.localizedMessage ?: ""),
                                     Toast.LENGTH_SHORT
                                 ).show()
                             }

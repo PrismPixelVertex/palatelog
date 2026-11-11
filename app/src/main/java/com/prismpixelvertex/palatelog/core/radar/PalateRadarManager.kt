@@ -94,7 +94,7 @@ class PalateRadarManager @Inject constructor(
         val eligibleSpots = rawCandidates.filter { spot ->
             val lat = spot.latitude
             val lng = spot.longitude
-            if (lat != null && lng != null && (lat != 0.0 || lng != 0.0)) {
+            if (lat != 0.0 || lng != 0.0) {
                 val distanceKm = GeoUtils.calculateDistanceKm(centerLat, centerLng, lat, lng)
                 distanceKm <= CORRIDOR_RADIUS_KM
             } else {
@@ -122,7 +122,7 @@ class PalateRadarManager @Inject constructor(
                         else -> 2
                     }
                 }.thenBy { spot ->
-                    GeoUtils.calculateDistanceKm(centerLat, centerLng, spot.latitude!!, spot.longitude!!)
+                    GeoUtils.calculateDistanceKm(centerLat, centerLng, spot.latitude, spot.longitude)
                 }
             )
             .take(MAX_GEOFENCES)
@@ -139,8 +139,8 @@ class PalateRadarManager @Inject constructor(
             Geofence.Builder()
                 .setRequestId(spot.id)
                 .setCircularRegion(
-                    spot.latitude!!,
-                    spot.longitude!!,
+                    spot.latitude,
+                    spot.longitude,
                     GEOFENCE_RADIUS_METERS
                 )
                 .setExpirationDuration(Geofence.NEVER_EXPIRE)

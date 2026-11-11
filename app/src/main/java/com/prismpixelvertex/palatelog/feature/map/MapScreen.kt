@@ -112,7 +112,13 @@ fun MapScreen(
         }
     }
 
-    val markers = remember(uiState.isLocationReady, uiState.userLatitude, uiState.userLongitude, uiState.selectedCustomLocation, uiState.restaurants) {
+    val yourLocationTitle = stringResource(R.string.map_your_location)
+    val selectedSpotDefault = stringResource(R.string.map_selected_spot_default)
+    val mapTapActionsSub = stringResource(R.string.map_tap_actions_sub)
+    val locationDisabledSnackbar = stringResource(R.string.map_location_disabled_snackbar)
+    val locationDisabledAction = stringResource(R.string.map_location_disabled_action)
+
+    val markers = remember(uiState.isLocationReady, uiState.userLatitude, uiState.userLongitude, uiState.selectedCustomLocation, uiState.restaurants, yourLocationTitle, selectedSpotDefault, mapTapActionsSub) {
         val list = mutableListOf<PalateMapMarker>()
 
         if (uiState.isLocationReady) {
@@ -121,7 +127,7 @@ fun MapScreen(
                     id = "USER_LOCATION",
                     latitude = uiState.userLatitude,
                     longitude = uiState.userLongitude,
-                    title = context.getString(R.string.map_your_location),
+                    title = yourLocationTitle,
                     customIcon = MapMarkerFactory.getUserLocationMarker(context)
                 )
             )
@@ -133,8 +139,8 @@ fun MapScreen(
                     id = "CUSTOM_LOCATION",
                     latitude = customLoc.latitude,
                     longitude = customLoc.longitude,
-                    title = if (customLoc.street.isNotBlank()) customLoc.street else context.getString(R.string.map_selected_spot_default),
-                    snippet = context.getString(R.string.map_tap_actions_sub),
+                    title = if (customLoc.street.isNotBlank()) customLoc.street else selectedSpotDefault,
+                    snippet = mapTapActionsSub,
                     customIcon = MapMarkerFactory.getCustomLocationMarker(context)
                 )
             )
@@ -249,8 +255,8 @@ fun MapScreen(
                 if (uiState.isLocationDisabled) {
                     coroutineScope.launch {
                         val result = snackbarHostState.showSnackbar(
-                            message = context.getString(R.string.map_location_disabled_snackbar),
-                            actionLabel = context.getString(R.string.map_location_disabled_action)
+                            message = locationDisabledSnackbar,
+                            actionLabel = locationDisabledAction
                         )
                         if (result == SnackbarResult.ActionPerformed) {
                             context.startActivity(Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS))

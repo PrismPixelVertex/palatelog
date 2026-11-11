@@ -97,13 +97,14 @@ import com.prismpixelvertex.palatelog.feature.help.HelpTopicKey
 fun QuickCaptureScreen(
     viewModel: QuickCaptureViewModel,
     onNavigateBack: () -> Unit,
-    onNavigateToHelpGuide: (HelpTopicKey?) -> Unit = {},
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onNavigateToHelpGuide: (HelpTopicKey?) -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
+    val savedToast = stringResource(R.string.quick_capture_logged_toast)
 
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
@@ -124,7 +125,7 @@ fun QuickCaptureScreen(
         viewModel.events.collect { event ->
             when (event) {
                 is QuickCaptureEvent.SavedSuccessfully -> {
-                    Toast.makeText(context, context.getString(R.string.quick_capture_logged_toast), Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, savedToast, Toast.LENGTH_SHORT).show()
                     onNavigateBack()
                 }
                 is QuickCaptureEvent.Error -> {

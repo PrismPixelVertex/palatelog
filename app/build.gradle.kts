@@ -62,7 +62,7 @@ if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 }
 
-android {
+configure<com.android.build.api.dsl.ApplicationExtension> {
     namespace = "com.prismpixelvertex.palatelog"
     compileSdk = 37
 
@@ -70,8 +70,8 @@ android {
         applicationId = "com.prismpixelvertex.palatelog"
         minSdk = 26
         targetSdk = 37
-        versionCode = 36
-        versionName = "1.2.28"
+        versionCode = 37
+        versionName = "1.2.29"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {

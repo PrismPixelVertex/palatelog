@@ -233,9 +233,9 @@ class PalateNotificationManager @Inject constructor(
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
-        val statusText = when {
-            stopCount == 0 -> context.getString(R.string.radar_service_notification_scanning_none)
-            stopCount == 1 -> context.getString(R.string.radar_service_notification_scanning_single, stopCount)
+        val statusText = when (stopCount) {
+            0 -> context.getString(R.string.radar_service_notification_scanning_none)
+            1 -> context.getString(R.string.radar_service_notification_scanning_single, stopCount)
             else -> context.getString(R.string.radar_service_notification_scanning_plural, stopCount)
         }
 

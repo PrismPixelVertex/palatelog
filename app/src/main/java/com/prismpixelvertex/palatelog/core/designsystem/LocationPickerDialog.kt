@@ -148,8 +148,8 @@ fun LocationPickerDialog(
                                 id = "SELECTED_PIN",
                                 latitude = selectedLat,
                                 longitude = selectedLng,
-                                title = context.getString(R.string.restaurant_detail_selected_spot_default),
-                                snippet = context.getString(R.string.map_tap_actions_sub),
+                                title = stringResource(R.string.restaurant_detail_selected_spot_default),
+                                snippet = stringResource(R.string.map_tap_actions_sub),
                                 customIcon = MapMarkerFactory.getCustomLocationMarker(context)
                             )
                         ),
