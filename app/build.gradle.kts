@@ -70,8 +70,8 @@ configure<com.android.build.api.dsl.ApplicationExtension> {
         applicationId = "com.prismpixelvertex.palatelog"
         minSdk = 26
         targetSdk = 37
-        versionCode = 37
-        versionName = "1.2.29"
+        versionCode = 38
+        versionName = "1.2.30"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {

@@ -6,6 +6,7 @@ import android.net.Uri
 import androidx.core.content.edit
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.prismpixelvertex.palatelog.R
 import com.prismpixelvertex.palatelog.core.database.FamilyMemberDao
 import com.prismpixelvertex.palatelog.core.database.FamilyMemberEntity
 import com.prismpixelvertex.palatelog.core.model.FamilyMember
@@ -27,6 +28,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.io.IOException
 import java.util.UUID
 import javax.inject.Inject
 
@@ -280,6 +282,10 @@ class SettingsViewModel @Inject constructor(
             } else {
                 _events.emit(SettingsEvent.ShowToast("Google Auth error: ${e.message}"))
             }
+        } catch (_: IOException) {
+            syncRepository.setGoogleAccountEmail(null)
+            _googleAccountEmail.value = null
+            _events.emit(SettingsEvent.ShowToast(context.getString(R.string.settings_sync_offline_retry)))
         } catch (e: Exception) {
             syncRepository.setGoogleAccountEmail(null)
             _googleAccountEmail.value = null
@@ -315,6 +321,8 @@ class SettingsViewModel @Inject constructor(
                     } else {
                         _events.emit(SettingsEvent.ShowToast("Auth error: ${e.message}"))
                     }
+                } catch (_: IOException) {
+                    _events.emit(SettingsEvent.ShowToast(context.getString(R.string.settings_sync_offline)))
                 } catch (e: Exception) {
                     if (e.message?.contains("Access Pending") == true) {
                         val folderId = syncRepository.getTargetFolderId() ?: ""

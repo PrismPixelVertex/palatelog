@@ -347,6 +347,8 @@
     <string name="settings_btn_share_link">📱 Share Link</string>
     <string name="settings_btn_join_folder">🔗 Join via Folder Link / ID</string>
     <string name="settings_btn_connect_drive">Connect Google Drive for Cloud Sync</string>
+    <string name="settings_sync_offline_retry">Network offline. Please check your connection and try again.</string>
+    <string name="settings_sync_offline">Network offline. Please check your connection.</string>
     <string name="settings_sync_never">Never</string>
     <string name="settings_offline_backup_title">Offline Backup &amp; Transfer</string>
     <string name="settings_btn_export_json">Export JSON</string>
