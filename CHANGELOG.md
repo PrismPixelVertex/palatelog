@@ -5,6 +5,19 @@ All notable changes to PalateLog will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.31] - 2026-11-11
+
+### Fixed & Enhanced (AGP 9 & Built-in Kotlin Modernization)
+- **Migrated to AGP 9 Built-in Kotlin**:
+  - Removed obsolete `org.jetbrains.kotlin.android` plugin from root `build.gradle.kts` and `app/build.gradle.kts` in favor of AGP 9's native built-in Kotlin compilation.
+  - Cleaned up plugin alias definition from `gradle/libs.versions.toml`.
+- **Eliminated Obsolete Variant API Warnings**:
+  - Resolved `applicationVariants`, `testVariants`, and `unitTestVariants` deprecation warnings previously triggered by `kotlin-android`.
+- **Cleaned Up Deprecated Compatibility Flags in `gradle.properties`**:
+  - Removed deprecated opt-out flags: `android.builtInKotlin=false`, `android.newDsl=false`, `android.enableAppCompileTimeRClass=false`, `android.usesSdkInManifest.disallowed=false`, `android.sdk.defaultTargetSdkToCompileSdkIfUnset=false`, `android.defaults.buildfeatures.resvalues=true`, and `android.uniquePackageNames=false`.
+  - Configured `android.dependency.useConstraints=false`, removing library constraint warnings.
+  - Successfully validated release AAB generation (`bundleRelease`) and complete test suite (`test`) with zero configuration warnings.
+
 ## [1.2.30] - 2026-11-11
 
 ### Fixed & Enhanced (Family Sync Notifications & Delta Filtering)
