@@ -5,6 +5,18 @@ All notable changes to PalateLog will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.30] - 2026-11-11
+
+### Fixed & Enhanced (Family Sync Notifications & Delta Filtering)
+- **Accurate Sync Delta Filtering (`SyncRepository`)**:
+  - Captured `previousSyncTimestamp` prior to remote downloads and imports to accurately identify newly modified restaurants, visits, and dishes (`it.updatedAt > previousSyncTimestamp`).
+  - Eliminated repeating duplicate notifications on subsequent sync passes when no new remote updates were made by family members.
+  - Linked new visits and dish reviews to their respective restaurants so relevant places are accurately surfaced in notifications even when restaurant metadata itself was unchanged.
+- **Semantic Verdict Indicator Formatting (`PalateNotificationManager` & `SyncRepository`)**:
+  - Replaced hardcoded red pushpin (`📍`) prefix on restaurants with clean semantic verdict tagging: `📍 Restaurant Name [VERDICT]` (e.g. `📍 Jems Pizza [GO]`, `📍 Thata Coffee [NO-GO]`, `📍 California Burrito [CAUTION]`).
+  - Preserved color circle indicators for dish verdicts: `🟢` for GO (Must-Try), `🔴` for NO-GO (Avoid), and `🟡` for MEH/Caution.
+  - Added `SyncRepository.formatSyncDigestDetails()` and unit test coverage in `PalateNotificationManagerTest` verifying verdict formatting, line capping, and deduplication.
+
 ## [1.2.29] - 2026-11-11
 
 ### Fixed & Enhanced (Android Lint & Compose Architecture Hardening)

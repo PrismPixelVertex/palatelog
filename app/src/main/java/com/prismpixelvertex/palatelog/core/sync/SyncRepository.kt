@@ -185,6 +185,7 @@ class SyncRepository @Inject constructor(
         }
 
         Log.d("PalateLog_Sync", "Starting Google Drive Sync for account: $accountEmail, device: $deviceId")
+        val previousSyncTimestamp = getLastSyncTimestamp()
         _syncStatus.value = SyncStatus.Syncing
         try {
             val accessToken = googleDriveSyncClient.getAccessToken(accountEmail)
@@ -317,15 +318,18 @@ class SyncRepository @Inject constructor(
             // Clear any previously active sync auth alert since sync was successful
             notificationManager.clearSyncAuthAlert()
 
-            // If remote family updates arrived, dispatch a batched family sync digest
-            val allNewRestaurants = remotePayloads.flatMap { it.restaurants }.filter { !it.isDeleted }
-            val allNewVisits = remotePayloads.flatMap { it.visits }.filter { !it.isDeleted }
-            val allNewDishes = remotePayloads.flatMap { it.dishes }.filter { !it.isDeleted }
+            // If remote family updates arrived since previous sync, dispatch a batched family sync digest
+            val isInitialSync = previousSyncTimestamp == 0L
+            val allNewRestaurants = remotePayloads.flatMap { it.restaurants }
+                .filter { !it.isDeleted && (isInitialSync || it.updatedAt > previousSyncTimestamp) }
+            val allNewVisits = remotePayloads.flatMap { it.visits }
+                .filter { !it.isDeleted && (isInitialSync || it.updatedAt > previousSyncTimestamp) }
+            val allNewDishes = remotePayloads.flatMap { it.dishes }
+                .filter { !it.isDeleted && (isInitialSync || it.updatedAt > previousSyncTimestamp) }
 
-            val totalUpdatesCount = allNewRestaurants.size + allNewVisits.size
+            val totalUpdatesCount = allNewRestaurants.size + allNewVisits.size + (if (allNewVisits.isEmpty()) allNewDishes.size else 0)
             if (totalUpdatesCount > 0) {
                 val memberNames = allNewVisits.mapNotNull { it.createdByMemberName.takeIf { name -> name.isNotBlank() } }.distinct()
-                val placeNames = allNewRestaurants.map { it.name }.distinct()
 
                 val authorName = when {
                     memberNames.size == 1 -> memberNames.first()
@@ -346,19 +350,63 @@ class SyncRepository @Inject constructor(
                     }
                 }
 
-                val details = mutableListOf<String>()
-                for (place in placeNames.take(3)) {
-                    details.add("📍 $place")
-                }
-                for (dish in allNewDishes.take(3)) {
-                    val verdictIcon = when (dish.verdict) {
-                        "GO" -> "🟢"
-                        "NO_GO" -> "🔴"
-                        else -> "🟡"
+                val remoteRestaurantMap = remotePayloads.flatMap { it.restaurants }.associateBy { it.id }
+                val relevantRestaurants = mutableListOf<SyncRestaurant>()
+                relevantRestaurants.addAll(allNewRestaurants)
+
+                for (visit in allNewVisits) {
+                    val r = remoteRestaurantMap[visit.restaurantId]
+                        ?: restaurantDao.getRestaurantByIdSync(visit.restaurantId)?.let {
+                            SyncRestaurant(
+                                id = it.id,
+                                name = it.name,
+                                latitude = it.latitude,
+                                longitude = it.longitude,
+                                address = it.address,
+                                city = it.city,
+                                highwayOrRoute = it.highwayOrRoute,
+                                cuisine = it.cuisine,
+                                restaurantType = it.restaurantType,
+                                overallVerdict = it.overallVerdict,
+                                tags = it.tags,
+                                isShared = it.isShared,
+                                createdAt = it.createdAt,
+                                updatedAt = it.updatedAt,
+                                isDeleted = it.isDeleted
+                            )
+                        }
+                    if (r != null && !r.isDeleted) {
+                        relevantRestaurants.add(r)
                     }
-                    details.add("$verdictIcon ${dish.dishName}")
                 }
 
+                for (dish in allNewDishes) {
+                    val r = remoteRestaurantMap[dish.restaurantId]
+                        ?: restaurantDao.getRestaurantByIdSync(dish.restaurantId)?.let {
+                            SyncRestaurant(
+                                id = it.id,
+                                name = it.name,
+                                latitude = it.latitude,
+                                longitude = it.longitude,
+                                address = it.address,
+                                city = it.city,
+                                highwayOrRoute = it.highwayOrRoute,
+                                cuisine = it.cuisine,
+                                restaurantType = it.restaurantType,
+                                overallVerdict = it.overallVerdict,
+                                tags = it.tags,
+                                isShared = it.isShared,
+                                createdAt = it.createdAt,
+                                updatedAt = it.updatedAt,
+                                isDeleted = it.isDeleted
+                            )
+                        }
+                    if (r != null && !r.isDeleted) {
+                        relevantRestaurants.add(r)
+                    }
+                }
+
+                val details = formatSyncDigestDetails(relevantRestaurants, allNewDishes)
                 notificationManager.postFamilySyncDigest(summary, details)
             }
 
@@ -570,5 +618,43 @@ class SyncRepository @Inject constructor(
     suspend fun importFromJsonString(jsonString: String) {
         val payload = json.decodeFromString<SyncPayload>(jsonString)
         importPayload(payload)
+    }
+
+    companion object {
+        /**
+         * Formats notification digest lines for sync updates.
+         * Restaurants are formatted with single icon and verdict tag: `📍 Place Name [VERDICT]` (e.g. `[GO]`, `[NO-GO]`, `[CAUTION]`).
+         * Dishes are formatted with verdict colored circle icons: 🟢 (GO), 🔴 (NO_GO), 🟡 (MEH/CAUTION).
+         * Output is capped to [maxLines] (default 5 for InboxStyle).
+         */
+        fun formatSyncDigestDetails(
+            restaurants: List<SyncRestaurant>,
+            dishes: List<SyncDish>,
+            maxLines: Int = 5
+        ): List<String> {
+            val details = mutableListOf<String>()
+            val distinctRestaurants = restaurants.distinctBy { it.id }.take(3)
+            for (restaurant in distinctRestaurants) {
+                val verdictLabel = when (restaurant.overallVerdict.uppercase()) {
+                    "NO_GO" -> "NO-GO"
+                    "GO" -> "GO"
+                    "CAUTION" -> "CAUTION"
+                    else -> restaurant.overallVerdict.replace('_', '-')
+                }
+                details.add("📍 ${restaurant.name} [$verdictLabel]")
+            }
+
+            val remainingSlots = (maxLines - details.size).coerceAtLeast(0)
+            val distinctDishes = dishes.distinctBy { it.dishName.trim().lowercase() }.take(remainingSlots)
+            for (dish in distinctDishes) {
+                val verdictIcon = when (dish.verdict.uppercase()) {
+                    "GO" -> "🟢"
+                    "NO_GO" -> "🔴"
+                    else -> "🟡"
+                }
+                details.add("$verdictIcon ${dish.dishName}")
+            }
+            return details
+        }
     }
 }
