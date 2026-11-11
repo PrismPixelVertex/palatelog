@@ -79,6 +79,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -122,13 +123,17 @@ fun RestaurantDetailScreen(
     viewModel: RestaurantDetailViewModel,
     onNavigateBack: () -> Unit,
     onNavigateToLogVisit: (restaurantId: String) -> Unit,
-    onNavigateToHelpGuide: (HelpTopicKey?) -> Unit = {},
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onNavigateToHelpGuide: (HelpTopicKey?) -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
 
     val restaurant = uiState.restaurant
+    val restaurantUpdatedToast = stringResource(R.string.restaurant_detail_updated_toast)
+    val visitUpdatedToast = stringResource(R.string.restaurant_detail_visit_updated_toast)
+    val visitDeletedToast = stringResource(R.string.restaurant_detail_visit_deleted_toast)
+    val dishDeletedToast = stringResource(R.string.restaurant_detail_dish_deleted_toast)
 
     val scrollState = rememberScrollState()
     val coroutineScope = rememberCoroutineScope()
@@ -470,7 +475,7 @@ fun RestaurantDetailScreen(
                     restaurantType = type,
                     overallVerdict = verdict
                 )
-                Toast.makeText(context, context.getString(R.string.restaurant_detail_updated_toast), Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, restaurantUpdatedToast, Toast.LENGTH_SHORT).show()
                 showEditRestaurantDialog = false
             }
         )
@@ -514,7 +519,7 @@ fun RestaurantDetailScreen(
                     visitVerdict = verdict,
                     generalNotes = notes
                 )
-                Toast.makeText(context, context.getString(R.string.restaurant_detail_visit_updated_toast), Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, visitUpdatedToast, Toast.LENGTH_SHORT).show()
                 visitToEdit = null
             }
         )
@@ -547,7 +552,7 @@ fun RestaurantDetailScreen(
                 TextButton(
                     onClick = {
                         viewModel.deleteVisit(visit.id)
-                        Toast.makeText(context, context.getString(R.string.restaurant_detail_visit_deleted_toast), Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, visitDeletedToast, Toast.LENGTH_SHORT).show()
                         visitToDelete = null
                     }
                 ) {
@@ -572,7 +577,7 @@ fun RestaurantDetailScreen(
                 TextButton(
                     onClick = {
                         viewModel.deleteDish(dish.id)
-                        Toast.makeText(context, context.getString(R.string.restaurant_detail_dish_deleted_toast), Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, dishDeletedToast, Toast.LENGTH_SHORT).show()
                         dishToDelete = null
                     }
                 ) {
@@ -1272,7 +1277,8 @@ private fun VisitHistoryCard(
     onDeleteVisit: () -> Unit,
     onPhotoClick: (String) -> Unit
 ) {
-    val dateFormatter = SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.getDefault())
+    val locale = LocalConfiguration.current.locales[0]
+    val dateFormatter = remember(locale) { SimpleDateFormat("dd MMM yyyy, hh:mm a", locale) }
     val dateString = dateFormatter.format(Date(visit.visitDate))
 
     Card(
@@ -1337,7 +1343,7 @@ private fun VisitHistoryCard(
             if (visit.billAmount > 0) {
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = stringResource(R.string.restaurant_detail_total_bill_fmt, String.format(Locale.getDefault(), "%.0f", visit.billAmount)),
+                    text = stringResource(R.string.restaurant_detail_total_bill_fmt, String.format(locale, "%.0f", visit.billAmount)),
                     style = MaterialTheme.typography.bodySmall,
                     fontWeight = FontWeight.Medium
                 )

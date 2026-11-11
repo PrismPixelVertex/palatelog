@@ -106,9 +106,9 @@ data class HelpSectionItem(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HelpGuideScreen(
-    initialTopic: String? = null,
     onNavigateBack: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    initialTopic: String? = null
 ) {
     val coroutineScope = rememberCoroutineScope()
     val listState = rememberLazyListState()

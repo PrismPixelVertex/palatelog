@@ -5,6 +5,26 @@ All notable changes to PalateLog will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.29] - 2026-11-11
+
+### Fixed & Enhanced (Android Lint & Compose Architecture Hardening)
+- **Configuration-Aware String Retrieval in Compose (`AndroidLintLocalContextGetResourceValueCall`)**:
+  - Replaced non-configuration-aware `LocalContext.current.getString(...)` calls across `CameraXCaptureDialog`, `LocationPickerDialog`, `EntryEditorScreen`, `MapScreen`, `QuickCaptureScreen`, and `RestaurantDetailScreen` with configuration-aware `stringResource(...)`.
+  - Ensures runtime configuration changes (language/locale switches, font scaling, display updates) reactively re-render localized strings without displaying stale text.
+- **Observable Compose Locales (`AndroidLintNonObservableLocale`)**:
+  - Migrated `Locale.getDefault()` calls in `RestaurantDetailScreen` and `SettingsScreen` to `LocalConfiguration.current.locales[0]`, ensuring date and currency formatters observe locale changes dynamically.
+- **State Autoboxing Optimization (`AndroidLintAutoboxingStateCreation`)**:
+  - Refactored camera selector state in `CameraXCaptureDialog` to use `mutableIntStateOf` rather than `mutableStateOf<Int>`, eliminating primitive autoboxing and heap allocation overhead during camera preview lifecycle events.
+- **Compose API Guidelines Compliance (`AndroidLintModifierParameter`)**:
+  - Reordered function signatures across `DashboardScreen`, `EntryEditorScreen`, `HelpGuideScreen`, `QuickCaptureScreen`, `RestaurantDetailScreen`, and `SettingsScreen` so `modifier: Modifier = Modifier` is the first optional parameter, complying with Jetpack Compose API design conventions.
+- **Android 13+ Themed Icons (`AndroidLintMonochromeLauncherIcon`)**:
+  - Added `<monochrome android:drawable="@drawable/ic_launcher_foreground" />` to `ic_launcher.xml` and `ic_launcher_round.xml`, enabling Material You dynamic icon theming on Android 13+ launchers.
+- **Deprecation & Code Hygiene Modernization**:
+  - Migrated `androidx.hilt.navigation.compose.hiltViewModel` import to `androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel` in `PalateLogNavGraph`.
+  - Updated Room `fallbackToDestructiveMigration()` in `DatabaseModule` to `fallbackToDestructiveMigration(dropAllTables = true)`.
+  - Removed redundant non-null assertions (`!!`) and always-true null checks on coordinates in `PalateRadarManager`.
+  - Cleaned up unused import directives across `Converters`, `PalateRadarService`, `SyncRepository`, and `EntryEditorScreen`.
+
 ## [1.2.28] - 2026-11-10
 
 ### Fixed & Hardened (GitHub Code Scanning Security Hardening)

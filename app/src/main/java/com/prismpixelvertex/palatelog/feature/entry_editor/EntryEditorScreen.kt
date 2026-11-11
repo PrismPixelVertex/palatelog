@@ -2,7 +2,6 @@ package com.prismpixelvertex.palatelog.feature.entry_editor
 
 import android.Manifest
 import android.content.pm.PackageManager
-import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -70,6 +69,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -105,19 +105,20 @@ import com.prismpixelvertex.palatelog.feature.help.HelpTopicKey
 fun EntryEditorScreen(
     viewModel: EntryEditorViewModel,
     onNavigateBack: () -> Unit,
-    onNavigateToHelpGuide: (HelpTopicKey?) -> Unit = {},
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onNavigateToHelpGuide: (HelpTopicKey?) -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     val snackbarHostState = remember { SnackbarHostState() }
+    val savedToast = stringResource(R.string.entry_editor_saved_toast)
 
     LaunchedEffect(Unit) {
         viewModel.events.collect { event ->
             when (event) {
                 is EntryEditorEvent.SavedSuccessfully -> {
-                    Toast.makeText(context, context.getString(R.string.entry_editor_saved_toast), Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, savedToast, Toast.LENGTH_SHORT).show()
                     onNavigateBack()
                 }
                 is EntryEditorEvent.Error -> {
@@ -646,6 +647,9 @@ fun PhotoAttachmentBox(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    val locale = LocalConfiguration.current.locales[0]
+    val cameraPermissionRequiredMsg = stringResource(R.string.camera_permission_required)
+    val cameraPickerErrorFormat = stringResource(R.string.camera_picker_error)
     var showCameraXDialog by remember { mutableStateOf(false) }
 
     val cameraPermissionLauncher = rememberLauncherForActivityResult(
@@ -654,7 +658,7 @@ fun PhotoAttachmentBox(
         if (isGranted) {
             showCameraXDialog = true
         } else {
-            Toast.makeText(context, context.getString(R.string.camera_permission_required), Toast.LENGTH_SHORT).show()
+            Toast.makeText(context, cameraPermissionRequiredMsg, Toast.LENGTH_SHORT).show()
         }
     }
 
@@ -718,7 +722,7 @@ fun PhotoAttachmentBox(
                 try {
                     pickPhotoLauncher.launch("image/*")
                 } catch (e: Exception) {
-                    Toast.makeText(context, context.getString(R.string.camera_picker_error, e.localizedMessage ?: ""), Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, String.format(locale, cameraPickerErrorFormat, e.localizedMessage ?: ""), Toast.LENGTH_SHORT).show()
                 }
             },
             shape = RoundedCornerShape(8.dp),

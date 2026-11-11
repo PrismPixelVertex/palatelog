@@ -83,6 +83,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -103,8 +104,8 @@ import java.util.Locale
 @Composable
 fun SettingsScreen(
     viewModel: SettingsViewModel,
-    onNavigateToHelpGuide: (HelpTopicKey?) -> Unit = {},
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onNavigateToHelpGuide: (HelpTopicKey?) -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
@@ -587,8 +588,9 @@ fun SettingsScreen(
                         }
                     }
 
+                    val locale = LocalConfiguration.current.locales[0]
                     val syncTimeText = if (uiState.lastSyncedAt > 0) {
-                        SimpleDateFormat("dd MMM yyyy, hh:mm a", Locale.getDefault()).format(Date(uiState.lastSyncedAt))
+                        SimpleDateFormat("dd MMM yyyy, hh:mm a", locale).format(Date(uiState.lastSyncedAt))
                     } else stringResource(R.string.settings_sync_never)
 
                     Text(

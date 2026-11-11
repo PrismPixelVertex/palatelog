@@ -112,8 +112,8 @@ fun DashboardScreen(
     onNavigateToRestaurantDetail: (String) -> Unit,
     onNavigateToQuickCapture: () -> Unit,
     onNavigateToEntryEditor: (restaurantId: String?) -> Unit,
-    onNavigateToHelpGuide: (HelpTopicKey?) -> Unit = {},
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onNavigateToHelpGuide: (HelpTopicKey?) -> Unit = {}
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val context = LocalContext.current
