@@ -234,7 +234,7 @@ class SyncRepository @Inject constructor(
 
                     if (photosFolderId != null) {
                         for (visit in remotePayload.visits) {
-                            val visitPhotoNames = if (visit.photoNames.isNotEmpty()) visit.photoNames else listOfNotNull(visit.billReceiptPhotoName)
+                            val visitPhotoNames = visit.photoNames.ifEmpty { listOfNotNull(visit.billReceiptPhotoName) }
                             for (photoName in visitPhotoNames) {
                                 val localFile = getLocalPhotoFile(photoName) ?: continue
                                 if (!localFile.exists()) {
@@ -501,7 +501,7 @@ class SyncRepository @Inject constructor(
 
             // 2. Merge Visits
             val visitEntities = payload.visits.map {
-                val names = if (it.photoNames.isNotEmpty()) it.photoNames else listOfNotNull(it.billReceiptPhotoName)
+                val names = it.photoNames.ifEmpty { listOfNotNull(it.billReceiptPhotoName) }
                 val uris = names.mapNotNull { name -> getLocalPhotoUri(name) }
                 val visitPhotosString = if (uris.isEmpty()) null else uris.joinToString(",")
 

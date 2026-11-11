@@ -149,8 +149,8 @@ class EntryEditorViewModel @Inject constructor(
                     _uiState.value = _uiState.value.copy(
                         latitude = loc.latitude,
                         longitude = loc.longitude,
-                        address = if (_uiState.value.address.isBlank()) loc.street else _uiState.value.address,
-                        city = if (_uiState.value.city.isBlank()) loc.city else _uiState.value.city
+                        address = _uiState.value.address.ifBlank { loc.street },
+                        city = _uiState.value.city.ifBlank { loc.city }
                     )
                 }
             }

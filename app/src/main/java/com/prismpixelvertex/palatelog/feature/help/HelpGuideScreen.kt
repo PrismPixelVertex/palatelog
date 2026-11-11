@@ -92,6 +92,7 @@ import com.prismpixelvertex.palatelog.core.model.DishVerdict
 import com.prismpixelvertex.palatelog.core.model.Verdict
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.milliseconds
 
 data class HelpSectionItem(
     val key: HelpTopicKey,
@@ -200,9 +201,9 @@ fun HelpGuideScreen(
             if (targetIndex >= 0) {
                 expandedKeys = expandedKeys + initialTopicKey
                 selectedFilterKey = initialTopicKey
-                delay(150)
+                delay(150.milliseconds)
                 listState.animateScrollToItem(targetIndex)
-                delay(2000)
+                delay(2000.milliseconds)
                 highlightedKey = null
             }
         }

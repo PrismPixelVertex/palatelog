@@ -207,9 +207,7 @@ class DashboardViewModel @Inject constructor(
                     val nearbyList = evaluatedCards.filter { card ->
                         card.distanceKm != null && card.distanceKm <= 15.0
                     }
-                    if (nearbyList.isNotEmpty()) {
-                        nearbyList
-                    } else {
+                    nearbyList.ifEmpty {
                         nearbyFallbackActive = true
                         evaluatedCards
                     }

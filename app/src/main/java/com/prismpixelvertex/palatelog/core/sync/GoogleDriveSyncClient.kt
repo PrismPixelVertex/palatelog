@@ -28,6 +28,7 @@ import io.ktor.utils.io.copyTo
 import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
@@ -268,7 +269,7 @@ class GoogleDriveSyncClient @Inject constructor(
                 lastException = e
                 if (attempt < 2 && (e is io.ktor.client.plugins.HttpRequestTimeoutException || e is IOException)) {
                     Log.w("GoogleDriveSyncClient", "Payload upload attempt $attempt failed with ${e.message}. Retrying in 1.5s...")
-                    delay(1500)
+                    delay(1500.milliseconds)
                 } else {
                     throw e
                 }

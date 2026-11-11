@@ -20,6 +20,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Android 13+ Themed Icons (`AndroidLintMonochromeLauncherIcon`)**:
   - Added `<monochrome android:drawable="@drawable/ic_launcher_foreground" />` to `ic_launcher.xml` and `ic_launcher_round.xml`, enabling Material You dynamic icon theming on Android 13+ launchers.
 - **Deprecation & Code Hygiene Modernization**:
+  - Replaced deprecated `Project.android(Action<BaseAppModuleExtension>)` DSL block in `app/build.gradle.kts` with `configure<com.android.build.api.dsl.ApplicationExtension> { ... }` for forward compatibility with AGP 9.0 (`android.newDsl=true`) and AGP 10.0.
+  - Replaced direct context display metric calculation in `MapplsMapRenderer` with `with(LocalDensity.current) { 16.dp.roundToPx() }` (`AndroidLintLocalContextResourcesRead`), and modernized compass access to Kotlin property syntax.
+  - Migrated `delay(Long)` millisecond literals in `GoogleDriveSyncClient` and `HelpGuideScreen` to type-safe `kotlin.time.Duration.Companion.milliseconds`.
+  - Modernized control flow with idiomatic `when` blocks in `PalateMapModels` and `PalateNotificationManager`, and applied `.ifEmpty` / `.ifBlank` idioms across `SyncRepository`, `DashboardViewModel`, and `EntryEditorViewModel`.
   - Migrated `androidx.hilt.navigation.compose.hiltViewModel` import to `androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel` in `PalateLogNavGraph`.
   - Updated Room `fallbackToDestructiveMigration()` in `DatabaseModule` to `fallbackToDestructiveMigration(dropAllTables = true)`.
   - Removed redundant non-null assertions (`!!`) and always-true null checks on coordinates in `PalateRadarManager`.

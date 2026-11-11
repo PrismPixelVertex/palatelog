@@ -89,14 +89,12 @@ object MapProviderConfig {
     }
 
     private fun resolveState(): ActiveMapProviderState {
-        val effective = if ((activeProvider == MapProviderType.MAPPLS) && isMapplsInitialized) {
-            MapProviderType.MAPPLS
-        } else if ((activeProvider == MapProviderType.MAPPLS) && !isMapplsInitialized) {
-            MapProviderType.OSM_DROID
-        } else {
-            activeProvider
+        val effective = when {
+            activeProvider == MapProviderType.MAPPLS && isMapplsInitialized -> MapProviderType.MAPPLS
+            activeProvider == MapProviderType.MAPPLS && !isMapplsInitialized -> MapProviderType.OSM_DROID
+            else -> activeProvider
         }
-        val isFallback = (activeProvider != effective)
+        val isFallback = activeProvider != effective
         return ActiveMapProviderState(
             primaryProvider = activeProvider,
             effectiveProvider = effective,
