@@ -425,6 +425,11 @@ class SyncRepository @Inject constructor(
             _syncStatus.value = SyncStatus.Error(e.message ?: "Google Auth required")
             notificationManager.postSyncAuthAlert(e.message ?: "Google Auth required", isFolderPermissionDenied = false)
             throw e
+        } catch (e: IOException) {
+            Log.w("PalateLog_Sync", "Sync failed due to network unavailability: ${e.message}")
+            _syncStatus.value = SyncStatus.Error("Network offline: ${e.localizedMessage ?: "Connection error"}")
+            // Standard offline states and transient network drops remain completely silent without notifications
+            throw e
         } catch (e: Exception) {
             Log.e("PalateLog_Sync", "Exception during sync: ${e.localizedMessage}", e)
             _syncStatus.value = SyncStatus.Error(e.localizedMessage ?: "Drive Sync failed")

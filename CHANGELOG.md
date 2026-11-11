@@ -16,6 +16,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Replaced hardcoded red pushpin (`📍`) prefix on restaurants with clean semantic verdict tagging: `📍 Restaurant Name [VERDICT]` (e.g. `📍 Jems Pizza [GO]`, `📍 Thata Coffee [NO-GO]`, `📍 California Burrito [CAUTION]`).
   - Preserved color circle indicators for dish verdicts: `🟢` for GO (Must-Try), `🔴` for NO-GO (Avoid), and `🟡` for MEH/Caution.
   - Added `SyncRepository.formatSyncDigestDetails()` and unit test coverage in `PalateNotificationManagerTest` verifying verdict formatting, line capping, and deduplication.
+- **Offline & Network Error Isolation (`GoogleDriveSyncClient` & `SyncRepository`)**:
+  - Differentiated transient `IOException` (offline/network drops) from genuine authentication failures (`GoogleAuthException`) during OAuth token retrieval.
+  - Eliminated false "Google Drive authorization expired" notification alerts when syncing while offline or in Airplane mode, displaying an in-app offline toast message instead while keeping notification shade silent.
 
 ## [1.2.29] - 2026-11-11
 

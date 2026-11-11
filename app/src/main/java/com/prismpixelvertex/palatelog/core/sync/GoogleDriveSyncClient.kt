@@ -2,6 +2,7 @@ package com.prismpixelvertex.palatelog.core.sync
 
 import android.accounts.Account
 import android.content.Context
+import com.google.android.gms.auth.GoogleAuthException as GmsGoogleAuthException
 import com.google.android.gms.auth.GoogleAuthUtil
 import com.google.android.gms.auth.UserRecoverableAuthException
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -101,8 +102,13 @@ class GoogleDriveSyncClient @Inject constructor(
             GoogleAuthUtil.getToken(context, account, scope)
         } catch (e: UserRecoverableAuthException) {
             throw GoogleAuthException("Google Auth permission required", e.intent)
+        } catch (e: GmsGoogleAuthException) {
+            throw GoogleAuthException("Google Auth error: ${e.message}")
+        } catch (e: IOException) {
+            // Transient network / offline I/O error: preserve as IOException so callers treat it as network failure, not auth expiration
+            throw e
         } catch (e: Exception) {
-            throw GoogleAuthException("Failed to obtain OAuth token: ${e.localizedMessage}")
+            throw IOException("Failed to obtain OAuth token: ${e.localizedMessage}", e)
         }
     }
 
