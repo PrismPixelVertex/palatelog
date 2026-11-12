@@ -87,6 +87,7 @@ Comprehensive documentation is available in the [`doc/`](doc/) directory:
 * [Decisions & Trade-offs (ADRs)](doc/decisions_and_tradeoffs.md): Why we chose OpenStreetMap + Google Maps intent, 3-second quick logging, serverless Drive sync, OpenJDK 21 LTS, CameraX in-app capture, and Highway Palate Radar architecture.
 * [Requirements Traceability & Roadmap](doc/requirements_traceability_and_roadmap.md): Complete traceability matrix mapping original user requirements against the code, with next-step priorities.
 * [Play Store Location Policy & Privacy Justification](doc/play_store_location_policy_justification.md): Ready-to-use Google Play Console declarations, prominent in-app disclosure copy, Data Safety tables, and reviewer video scripts.
+* [Privacy Policy](doc/privacy_policy.md) ([Live Web Version](https://karthikeyan-s.github.io/palatelog/)): Official Privacy Policy and Google Play Data Safety specifications for PalateLog.
 
 ---
 
