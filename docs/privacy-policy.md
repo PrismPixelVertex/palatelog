@@ -61,7 +61,7 @@ PalateLog is fully functional 100% offline without any account or login. If user
 
 ## 4. Data Retention, User Control, and Deletion
 Because PalateLog follows a local-first architecture, users have sovereign control over their records at all times:
-- **Individual Record Deletion:** Deleting a restaurant, visit entry, dish verdict, or photo immediately purges it from your local Room database. If sync is enabled, a tombstone record safely deletes it from family devices.
+- **Individual Record Deletion:** Deleting a restaurant, visit entry, dish verdict, or photo immediately hides it from the user interface and marks it with a deletion tombstone so it is safely and permanently removed across synchronized family devices.
 - **Full Local Reset:** Uninstalling PalateLog or clearing app storage from Android Settings immediately and permanently wipes all local database records, preferences, and photos from your device.
 - **Cloud Sync Removal:** If you use Google Drive sync, you can delete the `PalateLog_Family/` folder from your Google Drive or revoke PalateLog's access anytime via [Google Account Permissions](https://myaccount.google.com/permissions).
 
