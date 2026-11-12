@@ -5,6 +5,16 @@ All notable changes to PalateLog will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.32] - 2026-11-12
+
+### Fixed & Enhanced (Release Crash Hardening & Resource Preservation)
+- **Resolved Startup Crash from Resource Shrinking (`R.string.mappls_olf_data`)**:
+  - Added `app/src/main/res/raw/keep.xml` to instruct Android's resource shrinker (`isShrinkResources = true`) to preserve dynamic Mappls license and configuration strings (`mappls_olf_data`, `mappls_conf_data`), drawables, and layout templates that are resolved at runtime.
+  - Added explicit ProGuard keep rules in `app/proguard-rules.pro` for `com.mappls.sdk.**` classes and interfaces.
+- **Resilient Map SDK Background Failure Isolation (`PalateLogApp`)**:
+  - Registered a dedicated uncaught exception safety handler in `PalateLogApp.onCreate()` to intercept asynchronous initialization failures originating from Mappls background worker threads (such as Play App Signing certificate fingerprint mismatches or network timeouts).
+  - Automatically engages the graceful OpenStreetMap (OSM) fallback (`MapProviderConfig.notifyMapplsInitialized(false)` and `MapProviderConfig.notifyFallbackEngaged()`), guaranteeing that map configuration issues never crash the app process on launch.
+
 ## [1.2.31] - 2026-11-11
 
 ### Fixed & Enhanced (AGP 9 & Built-in Kotlin Modernization)

@@ -25,6 +25,8 @@ class PalateLogApp : Application(), Configuration.Provider {
 
     override fun onCreate() {
         super.onCreate()
+        setupMapplsSafetyExceptionHandler()
+
         try {
             notificationManager.initChannels()
         } catch (e: Exception) {
@@ -39,5 +41,32 @@ class PalateLogApp : Application(), Configuration.Provider {
             Log.e(TAG, "Mappls SDK initialization failed", e)
             com.prismpixelvertex.palatelog.core.designsystem.MapProviderConfig.notifyMapplsInitialized(false)
         }
+    }
+
+    private fun setupMapplsSafetyExceptionHandler() {
+        val originalHandler = Thread.getDefaultUncaughtExceptionHandler()
+        Thread.setDefaultUncaughtExceptionHandler { thread, throwable ->
+            if (isMapplsException(throwable)) {
+                Log.e(TAG, "Caught unhandled Mappls SDK failure on thread '${thread.name}'. Gracefully engaging OSM fallback.", throwable)
+                com.prismpixelvertex.palatelog.core.designsystem.MapProviderConfig.notifyMapplsInitialized(false)
+                com.prismpixelvertex.palatelog.core.designsystem.MapProviderConfig.notifyFallbackEngaged()
+            } else {
+                originalHandler?.uncaughtException(thread, throwable)
+            }
+        }
+    }
+
+    private fun isMapplsException(throwable: Throwable?): Boolean {
+        var current = throwable
+        while (current != null) {
+            if (current.stackTrace.any { it.className.startsWith("com.mappls.") }) {
+                return true
+            }
+            if (current.message?.contains("Package Name / App Fingerprint", ignoreCase = true) == true) {
+                return true
+            }
+            current = current.cause
+        }
+        return false
     }
 }
