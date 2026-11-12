@@ -2,7 +2,7 @@
 
 **Application ID:** `com.prismpixelvertex.palatelog`  
 **Effective Date:** November 12, 2026  
-**Developer:** Karthikeyan S  
+**Developer:** PrismPixelVertex  
 **GitHub Repository:** [https://github.com/karthikeyan-s/palatelog](https://github.com/karthikeyan-s/palatelog)  
 **Email Support:** prismpixelvertex@gmail.com  
 
@@ -85,6 +85,6 @@ We may periodically update this Privacy Policy to reflect application improvemen
 
 ## 8. Contact Information
 If you have any questions, feedback, or data privacy inquiries regarding PalateLog, please contact:  
-- **Developer:** Karthikeyan S  
+- **Developer:** PrismPixelVertex  
 - **GitHub Repository:** [https://github.com/karthikeyan-s/palatelog](https://github.com/karthikeyan-s/palatelog)  
 - **Email Support:** prismpixelvertex@gmail.com  

@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>PalateLog - Google Play Store Assets Generator</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #0f172a;
+            color: #f8fafc;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 24px;
+        }
+        h1 { margin-bottom: 4px; color: #f59e0b; }
+        p { color: #94a3b8; margin-top: 0; }
+        .card {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 16px;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+        }
+        canvas {
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+        }
+        button {
+            background: #f59e0b;
+            color: #1e293b;
+            border: none;
+            font-weight: 700;
+            font-size: 1rem;
+            padding: 12px 24px;
+            border-radius: 9999px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        button:hover {
+            background: #d97706;
+            color: #ffffff;
+            transform: translateY(-2px);
+        }
+        .row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 32px;
+            justify-content: center;
+        }
+    </style>
+</head>
+<body>
+    <h1>PalateLog Store Asset Generator</h1>
+    <p>Rendered directly from PalateLog's vector definitions to meet exact Google Play specifications.</p>
+
+    <div class="row">
+        <!-- 512x512 App Icon -->
+        <div class="card">
+            <h2>App Icon (512 &times; 512 px)</h2>
+            <canvas id="iconCanvas" width="512" height="512" style="width: 256px; height: 256px;"></canvas>
+            <button onclick="downloadIcon()">📥 Download 512x512 App Icon (PNG)</button>
+        </div>
+
+        <!-- 1024x500 Feature Graphic -->
+        <div class="card">
+            <h2>Feature Graphic (1024 &times; 500 px)</h2>
+            <canvas id="featureCanvas" width="1024" height="500" style="width: 512px; height: 250px;"></canvas>
+            <button onclick="downloadFeatureGraphic()">📥 Download 1024x500 Feature Graphic (PNG)</button>
+        </div>
+    </div>
+
+    <script>
+        // 1. Draw 512x512 App Icon
+        const iconCanvas = document.getElementById('iconCanvas');
+        const ictx = iconCanvas.getContext('2d');
+        const s = 512 / 108; // scale from 108 viewport to 512
+
+        // Background
+        ictx.fillStyle = '#1E293B';
+        ictx.fillRect(0, 0, 512, 512);
+
+        // Outer Plate (Amber #F59E0B)
+        ictx.fillStyle = '#F59E0B';
+        ictx.beginPath();
+        ictx.arc(54 * s, 54 * s, 26 * s, 0, Math.PI * 2);
+        ictx.fill();
+
+        // Inner Plate (White #FFFFFF)
+        ictx.fillStyle = '#FFFFFF';
+        ictx.beginPath();
+        ictx.arc(54 * s, 54 * s, 20 * s, 0, Math.PI * 2);
+        ictx.fill();
+
+        // Fork / Cutlery (Emerald #10B981)
+        ictx.fillStyle = '#10B981';
+        ictx.beginPath();
+        const pts = [
+            [48, 46], [46, 58], [52, 58], [52, 66],
+            [56, 66], [56, 58], [62, 58], [60, 46]
+        ];
+        ictx.moveTo(pts[0][0] * s, pts[0][1] * s);
+        for (let i = 1; i < pts.length; i++) {
+            ictx.lineTo(pts[i][0] * s, pts[i][1] * s);
+        }
+        ictx.closePath();
+        ictx.fill();
+
+        function downloadIcon() {
+            const link = document.createElement('a');
+            link.download = 'palatelog_icon_512.png';
+            link.href = iconCanvas.toDataURL('image/png');
+            link.click();
+        }
+
+        // 2. Draw 1024x500 Feature Graphic
+        const featureCanvas = document.getElementById('featureCanvas');
+        const fctx = featureCanvas.getContext('2d');
+
+        // Gradient background
+        const grad = fctx.createLinearGradient(0, 0, 1024, 500);
+        grad.addColorStop(0, '#0f172a');
+        grad.addColorStop(1, '#1e293b');
+        fctx.fillStyle = grad;
+        fctx.fillRect(0, 0, 1024, 500);
+
+        // Draw Icon on left side (scaled to 260px)
+        const fs = 260 / 108;
+        const offsetX = 85;
+        const offsetY = 120;
+
+        // Plate shadow
+        fctx.save();
+        fctx.shadowColor = 'rgba(0,0,0,0.5)';
+        fctx.shadowBlur = 30;
+        fctx.fillStyle = '#F59E0B';
+        fctx.beginPath();
+        fctx.arc(offsetX + 54 * fs, offsetY + 54 * fs, 26 * fs, 0, Math.PI * 2);
+        fctx.fill();
+        fctx.restore();
+
+        // Inner white plate
+        fctx.fillStyle = '#FFFFFF';
+        fctx.beginPath();
+        fctx.arc(offsetX + 54 * fs, offsetY + 54 * fs, 20 * fs, 0, Math.PI * 2);
+        fctx.fill();
+
+        // Fork
+        fctx.fillStyle = '#10B981';
+        fctx.beginPath();
+        fctx.moveTo(offsetX + pts[0][0] * fs, offsetY + pts[0][1] * fs);
+        for (let i = 1; i < pts.length; i++) {
+            fctx.lineTo(offsetX + pts[i][0] * fs, offsetY + pts[i][1] * fs);
+        }
+        fctx.closePath();
+        fctx.fill();
+
+        // Typography on right side
+        fctx.fillStyle = '#FFFFFF';
+        fctx.font = 'bold 68px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        fctx.fillText('PalateLog', 380, 205);
+
+        fctx.fillStyle = '#F59E0B';
+        fctx.font = 'bold 28px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        fctx.fillText('Never Repeat a Dining Regret', 380, 260);
+
+        fctx.fillStyle = '#cbd5e1';
+        fctx.font = '600 21px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+        fctx.fillText('Offline Dining Journal  •  Dish Verdicts  •  Highway Radar', 380, 320);
+
+        function downloadFeatureGraphic() {
+            const link = document.createElement('a');
+            link.download = 'palatelog_feature_graphic_1024x500.png';
+            link.href = featureCanvas.toDataURL('image/png');
+            link.click();
+        }
+    </script>
+</body>
+</html>
