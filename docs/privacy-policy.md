@@ -2,8 +2,8 @@
 
 **Application ID:** `com.prismpixelvertex.palatelog`  
 **Effective Date:** November 12, 2026  
-**Developer:** Karthikeyan S  
-**GitHub Repository:** [https://github.com/karthikeyan-s/palatelog](https://github.com/karthikeyan-s/palatelog)  
+**Developer:** PrismPixelVertex  
+**GitHub Repository:** [https://github.com/PrismPixelVertex/palatelog](https://github.com/PrismPixelVertex/palatelog)  
 **Email Support:** prismpixelvertex@gmail.com  
 
 PalateLog is designed with local data sovereignty and offline-first privacy. We believe your dining records, personal dish reactions, roadside tea stop regrets, and family notes belong entirely to you. PalateLog does not operate central servers, does not run user-tracking databases, and contains zero advertising or telemetry trackers.
@@ -85,6 +85,6 @@ We may periodically update this Privacy Policy to reflect application improvemen
 
 ## 8. Contact Information
 If you have any questions, feedback, or data privacy inquiries regarding PalateLog, please contact:  
-- **Developer:** Karthikeyan S  
-- **GitHub Repository:** [https://github.com/karthikeyan-s/palatelog](https://github.com/karthikeyan-s/palatelog)  
+- **Developer:** PrismPixelVertex  
+- **GitHub Repository:** [https://github.com/PrismPixelVertex/palatelog](https://github.com/PrismPixelVertex/palatelog)  
 - **Email Support:** prismpixelvertex@gmail.com  
