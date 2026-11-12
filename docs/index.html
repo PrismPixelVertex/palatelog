@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy Policy - PalateLog</title>
+    <meta name="description" content="Privacy Policy for PalateLog Android Application. Offline-first dining journal and roadside regret logger.">
+    <style>
+        :root {
+            --primary: #d97706;
+            --primary-dark: #b45309;
+            --accent-green: #059669;
+            --accent-red: #dc2626;
+            --bg-color: #fafaf9;
+            --card-bg: #ffffff;
+            --text-main: #1c1917;
+            --text-muted: #57534e;
+            --border-color: #e7e5e4;
+            --badge-bg: #fef3c7;
+            --badge-text: #92400e;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --primary: #f59e0b;
+                --primary-dark: #d97706;
+                --accent-green: #10b981;
+                --accent-red: #ef4444;
+                --bg-color: #121212;
+                --card-bg: #1e1e1e;
+                --text-main: #f5f5f4;
+                --text-muted: #a8a29e;
+                --border-color: #2e2e2e;
+                --badge-bg: #2d2613;
+                --badge-text: #fbbf24;
+            }
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.65;
+            color: var(--text-main);
+            background-color: var(--bg-color);
+            padding: 24px 16px;
+        }
+
+        .container {
+            max-width: 860px;
+            margin: 0 auto;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 16px;
+            padding: 40px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+        }
+
+        @media (max-width: 640px) {
+            .container {
+                padding: 24px 16px;
+                border-radius: 12px;
+            }
+        }
+
+        header {
+            border-bottom: 2px solid var(--border-color);
+            padding-bottom: 24px;
+            margin-bottom: 32px;
+        }
+
+        .app-badge {
+            display: inline-block;
+            background: var(--badge-bg);
+            color: var(--badge-text);
+            font-size: 0.85rem;
+            font-weight: 700;
+            padding: 4px 12px;
+            border-radius: 9999px;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        h1 {
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: var(--text-main);
+            margin-bottom: 8px;
+            line-height: 1.2;
+        }
+
+        .meta {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        h2 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            margin-top: 36px;
+            margin-bottom: 16px;
+            color: var(--primary);
+            border-left: 4px solid var(--primary);
+            padding-left: 12px;
+        }
+
+        h3 {
+            font-size: 1.15rem;
+            font-weight: 600;
+            margin-top: 24px;
+            margin-bottom: 10px;
+            color: var(--text-main);
+        }
+
+        p, li {
+            color: var(--text-main);
+            margin-bottom: 14px;
+        }
+
+        ul {
+            padding-left: 24px;
+            margin-bottom: 18px;
+        }
+
+        li {
+            margin-bottom: 8px;
+        }
+
+        .highlight-box {
+            background-color: var(--badge-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 16px 20px;
+            margin: 20px 0;
+            color: var(--text-main);
+        }
+
+        .highlight-box strong {
+            color: var(--badge-text);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 24px 0;
+            font-size: 0.92rem;
+        }
+
+        th, td {
+            border: 1px solid var(--border-color);
+            padding: 12px 14px;
+            text-align: left;
+        }
+
+        th {
+            background: var(--badge-bg);
+            color: var(--badge-text);
+            font-weight: 700;
+        }
+
+        tr:nth-child(even) {
+            background-color: rgba(0, 0, 0, 0.02);
+        }
+
+        .status-badge {
+            display: inline-block;
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 6px;
+        }
+
+        .status-green {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+
+        .status-blue {
+            background-color: #dbeafe;
+            color: #1e40af;
+        }
+
+        footer {
+            margin-top: 48px;
+            padding-top: 24px;
+            border-top: 1px solid var(--border-color);
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            text-align: center;
+        }
+
+        a {
+            color: var(--primary);
+            text-decoration: underline;
+        }
+        a:hover {
+            color: var(--primary-dark);
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <header>
+        <span class="app-badge">Official Policy</span>
+        <h1>Privacy Policy for PalateLog</h1>
+        <div class="meta">
+            <strong>Application:</strong> PalateLog (<code>com.prismpixelvertex.palatelog</code>)<br>
+            <strong>Effective Date:</strong> November 12, 2026<br>
+            <strong>Platform:</strong> Android (Offline-First Dining Journal &amp; Roadside Regret Logger)
+        </div>
+    </header>
+
+    <div class="highlight-box">
+        <strong>Core Philosophy:</strong> PalateLog is designed with local data sovereignty and offline-first privacy. We believe your dining records, personal dish reactions, roadside tea stop regrets, and family notes belong entirely to you. PalateLog does not operate any central servers, does not run user-tracking databases, and contains zero advertising or telemetry trackers.
+    </div>
+
+    <h2>1. Information We Do NOT Collect</h2>
+    <ul>
+        <li><strong>No Central Server Storage:</strong> PalateLog does not operate any remote servers or databases that collect your reviews, bill amounts, dish preferences, or photos.</li>
+        <li><strong>No Analytics or Crashlytics Trackers:</strong> PalateLog does not include third-party behavioral analytics (such as Firebase Analytics, Adjust, AppsFlyer, or Facebook SDK).</li>
+        <li><strong>No Advertisements or Advertising ID:</strong> We do not serve advertisements, monetize user data, or request the Android Advertising ID (<code>AD_ID</code>).</li>
+        <li><strong>No Third-Party Data Sharing:</strong> We do not sell, rent, broker, or transmit any user information to data brokers, marketing agencies, or advertisers.</li>
+    </ul>
+
+    <h2>2. Device Permissions &amp; Data Practices</h2>
+
+    <h3>A. Location (Approximate &amp; Precise Location)</h3>
+    <p>PalateLog requests location permissions (<code>ACCESS_FINE_LOCATION</code>, <code>ACCESS_COARSE_LOCATION</code>, <code>ACCESS_BACKGROUND_LOCATION</code>, and <code>FOREGROUND_SERVICE_LOCATION</code>) for two user-facing capabilities:</p>
+    <ul>
+        <li><strong>Local Geotagging &amp; Proximity Sorting:</strong> Automatically suggesting nearby area names when logging a dining spot and computing road distances on the Explore map.</li>
+        <li><strong>Palate Radar (On-Demand Roadside Dining Assistant):</strong> When users embark on highway road trips, they can activate Palate Radar via an in-app toggle or a Quick Settings shade tile. Palate Radar registers Google Play Services Geofences for up to 100 user-saved highway stops within a 500 km radius and sounds a high-priority heads-up warning 500 meters before approaching previously logged roadside regrets (e.g. bad tea stalls, terrible food, or unhygienic restrooms).</li>
+    </ul>
+    <div class="highlight-box">
+        <strong>Strict Privacy Safeguards on Location:</strong>
+        <ul style="margin-top: 8px; margin-bottom: 0;">
+            <li><strong>100% On-Device &amp; Ephemeral:</strong> GPS coordinates are queried exclusively in device memory against your local SQLite database and Play Services Geofencing. Location coordinates are never sent off your phone.</li>
+            <li><strong>Zero Continuous Tracking:</strong> Palate Radar operates only during an active user-initiated trip. It does not perform perpetual 24/7 background tracking. When stopped, geofences are immediately deleted and location monitoring ceases.</li>
+            <li><strong>Clear Disclosure:</strong> An explicit in-app prominent disclosure dialog is presented to the user before Palate Radar is activated.</li>
+        </ul>
+    </div>
+
+    <h3>B. Camera &amp; Storage</h3>
+    <p>PalateLog requests camera access (<code>CAMERA</code>) via Android Jetpack CameraX to allow users to take photos of dishes and bill receipts directly within the app.</p>
+    <ul>
+        <li><strong>Private Internal Storage:</strong> Captured photos are saved solely to PalateLog's private, app-scoped internal directory (<code>context.filesDir</code>).</li>
+        <li><strong>No Gallery Scanning:</strong> The app does not scan, index, or access your broader device photo library.</li>
+    </ul>
+
+    <h3>C. Notifications</h3>
+    <p>On Android 13+ (API 33+), PalateLog requests notification permissions (<code>POST_NOTIFICATIONS</code>) strictly for essential utility alerts:</p>
+    <ul>
+        <li><strong>Radar Alerts:</strong> High-priority proximity warnings when approaching saved roadside regrets on highways.</li>
+        <li><strong>Ongoing Trip Indicator:</strong> A persistent foreground service notification showing active radar status with a 1-tap &ldquo;Turn Off&rdquo; button.</li>
+        <li><strong>Family Sync Digest:</strong> Silent background notifications when new dining entries or dish reviews are synchronized from family members.</li>
+    </ul>
+
+    <h3>D. Optional Zero-Cost Cloud Sync (Google Drive)</h3>
+    <p>PalateLog is fully functional 100% offline without any account or login. If users choose to enable the optional family cloud sync:</p>
+    <ul>
+        <li>The app authenticates directly with Google Play Services using the user&rsquo;s own Google account.</li>
+        <li>Synchronization payloads (compact JSON deltas and photos) are written directly to a user-owned <code>PalateLog_Family/</code> folder in Google Drive via HTTPS.</li>
+        <li>No developer servers or third-party intermediaries ever receive or store your credentials, authorization tokens, or dining files.</li>
+    </ul>
+
+    <h2>3. Google Play Data Safety Summary</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Data Type</th>
+                <th>Collected?</th>
+                <th>Shared with Third Parties?</th>
+                <th>Ephemeral Processing?</th>
+                <th>Required or Optional?</th>
+                <th>Purpose</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>Location</strong> (Approximate &amp; Precise)</td>
+                <td><span class="status-badge status-green">Yes</span></td>
+                <td><span class="status-badge status-green">No</span></td>
+                <td><span class="status-badge status-blue">Yes</span> (Memory only)</td>
+                <td><span class="status-badge status-blue">Optional</span></td>
+                <td>App functionality (Nearby spot suggestions &amp; Palate Radar 500m highway alerts)</td>
+            </tr>
+            <tr>
+                <td><strong>Photos</strong></td>
+                <td><span class="status-badge status-green">Yes</span></td>
+                <td><span class="status-badge status-green">No</span></td>
+                <td><span class="status-badge status-blue">No</span> (Saved to local private storage)</td>
+                <td><span class="status-badge status-blue">Optional</span></td>
+                <td>App functionality (Dish reviews &amp; bill receipts)</td>
+            </tr>
+            <tr>
+                <td><strong>Personal Info</strong> (Email Address)</td>
+                <td><span class="status-badge status-green">Yes</span></td>
+                <td><span class="status-badge status-green">No</span></td>
+                <td><span class="status-badge status-blue">No</span> (Local account profile only)</td>
+                <td><span class="status-badge status-blue">Optional</span></td>
+                <td>Account management (Optional Google Drive Family Sync)</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2>4. Data Retention, User Control, and Deletion</h2>
+    <p>Because PalateLog follows a local-first architecture, users have sovereign control over their records at all times:</p>
+    <ul>
+        <li><strong>Individual Record Deletion:</strong> Deleting a restaurant, visit entry, dish verdict, or photo immediately hides it from the user interface and marks it with a deletion tombstone so it is safely and permanently removed across synchronized family devices.</li>
+        <li><strong>Full Local Reset:</strong> Uninstalling PalateLog or clearing app storage from Android Settings immediately and permanently wipes all local database records, preferences, and photos from your device.</li>
+        <li><strong>Cloud Sync Removal:</strong> If you use Google Drive sync, you can delete the <code>PalateLog_Family/</code> folder from your Google Drive or revoke PalateLog&rsquo;s access anytime via <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener">Google Account Permissions</a>.</li>
+    </ul>
+
+    <h2>5. Security Practices</h2>
+    <ul>
+        <li><strong>Encryption in Transit:</strong> All communications between the app and external services (OpenStreetMap/Mappls map tile requests and Google Drive REST API calls) are strictly enforced over encrypted HTTPS (TLS 1.2+).</li>
+        <li><strong>Sandboxed Internal Storage:</strong> App database records and captured photos are stored inside Android&rsquo;s sandboxed internal storage, inaccessible to other applications installed on the device.</li>
+    </ul>
+
+    <h2>6. Children&rsquo;s Privacy</h2>
+    <p>PalateLog is designed for general audiences aged 18 and older (or individuals capable of operating dining apps and driving assistance utilities). We do not knowingly collect or solicit personal information from children under the age of 13.</p>
+
+    <h2>7. Changes to This Policy</h2>
+    <p>We may periodically update this Privacy Policy to reflect application improvements or regulatory requirements. Any updates will be posted directly to this URL with a revised effective date.</p>
+
+    <h2>8. Contact Information</h2>
+    <p>If you have any questions, feedback, or data privacy inquiries regarding PalateLog, please contact:</p>
+    <p>
+        <strong>Developer:</strong> Karthikeyan S<br>
+        <strong>GitHub Repository:</strong> <a href="https://github.com/karthikeyan-s/palatelog" target="_blank" rel="noopener">https://github.com/karthikeyan-s/palatelog</a><br>
+        <strong>Email Support:</strong> <a href="mailto:prismpixelvertex@gmail.com">prismpixelvertex@gmail.com</a>
+    </p>
+
+    <footer>
+        &copy; 2026 PalateLog &bull; Built with Local Data Sovereignty &bull; MIT License
+    </footer>
+</div>
+</body>
+</html>
