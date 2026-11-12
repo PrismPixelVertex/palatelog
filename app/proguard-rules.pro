@@ -28,5 +28,7 @@
 -dontwarn org.osmdroid.**
 
 # Mappls Map Engine
+-keep class com.mappls.** { *; }
+-keep interface com.mappls.** { *; }
 -dontwarn com.mappls.**
 

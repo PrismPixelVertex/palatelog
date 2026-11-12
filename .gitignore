@@ -93,3 +93,7 @@ device-dump/
 
 # Mappls generated configuration
 mappls-conf.txt
+
+# Release bundle output folder
+app/release/
+
