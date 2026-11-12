@@ -1,7 +1,7 @@
 # PalateLog: Architecture & Technical Design Specification
 
 > **Application ID**: `com.prismpixelvertex.palatelog`  
-> **Repository**: [https://github.com/karthikeyan-s/palatelog](https://github.com/karthikeyan-s/palatelog)  
+> **Repository**: [https://github.com/PrismPixelVertex/palatelog](https://github.com/PrismPixelVertex/palatelog)  
 > **Platform**: Android (Kotlin 2.0+, Jetpack Compose Material 3)
 
 ---

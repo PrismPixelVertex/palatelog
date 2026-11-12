@@ -15,7 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Registered a dedicated uncaught exception safety handler in `PalateLogApp.onCreate()` to intercept asynchronous initialization failures originating from Mappls background worker threads (such as Play App Signing certificate fingerprint mismatches or network timeouts).
   - Automatically engages the graceful OpenStreetMap (OSM) fallback (`MapProviderConfig.notifyMapplsInitialized(false)` and `MapProviderConfig.notifyFallbackEngaged()`), guaranteeing that map configuration issues never crash the app process on launch.
 - **Added Public GitHub Pages Privacy Policy (`docs/index.html` & `docs/privacy-policy.html`)**:
-  - Authored a comprehensive, mobile-responsive Privacy Policy hosted via GitHub Pages at `https://karthikeyan-s.github.io/palatelog/`.
+  - Authored a comprehensive, mobile-responsive Privacy Policy hosted via GitHub Pages at `https://prismpixelvertex.github.io/palatelog/`.
   - Detailed offline-first data sovereignty, ephemeral memory-only processing of location coordinates for Palate Radar geofencing, app-scoped camera and photo storage, and direct zero-cost Google Drive sync with zero developer servers.
   - Linked policy documentation directly in `README.md` and `doc/privacy_policy.md` for Google Play Closed Testing readiness.
 
