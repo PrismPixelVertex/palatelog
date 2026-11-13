@@ -20,6 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Displayed all user-registered restaurants from the local Room SQLite database (`RestaurantDao`) with an embossed gold Star badge (`⭐`) on the pin shoulder, making personal saved spots instantly distinguishable from third-party map POIs.
   - Color-coded by verdict (Emerald Green for `GO`, Crimson Red for `NO_GO`, Amber Yellow for `CAUTION`) with no distance restrictions.
   - Enables 1-tap re-use of previously saved dining locations to prevent accidental duplicate entries.
+  - Linked saved restaurant selection in `LocationPickerDialog` to `EntryEditorViewModel.selectExistingRestaurantById`: seamlessly transitions screen title to "Edit Visit Log", activates the "PAST DISHES REMEMBERED (TAP TO ADD):" carousel with past dishes loaded from Room SQLite, and auto-populates historical restaurant metadata without losing in-progress draft inputs.
 - **Restored Interactive Map Pin & Annotation Rendering**:
   - Removed base vector layer suppression in `MapplsMapRenderer` and `PalateInteractiveMap` that had inadvertently suppressed map annotation layers, guaranteeing that tapped custom location pins (`SELECTED_PIN`) and saved restaurant markers appear immediately on screen.
   - Added floating Material 3 filter chips (`⭐ My Saved` as fixed anchor followed by `🍽️ Food POIs`) at the top of the map. Inlined the POI search loading indicator into the chip's leading icon slot, completely eliminating button width jumping and horizontal layout shift during map panning.

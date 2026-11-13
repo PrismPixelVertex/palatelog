@@ -101,7 +101,8 @@ fun LocationPickerDialog(
     userGpsLongitude: Double? = null,
     onDismiss: () -> Unit,
     onLocationConfirmed: (latitude: Double, longitude: Double) -> Unit,
-    onLocationConfirmedWithPlace: ((latitude: Double, longitude: Double, placeName: String?) -> Unit)? = null
+    onLocationConfirmedWithPlace: ((latitude: Double, longitude: Double, placeName: String?) -> Unit)? = null,
+    onLocationConfirmedWithDetails: ((latitude: Double, longitude: Double, placeName: String?, savedRestaurantId: String?) -> Unit)? = null
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
@@ -799,6 +800,7 @@ fun LocationPickerDialog(
                         onClick = {
                             onLocationConfirmed(selectedLat, selectedLng)
                             onLocationConfirmedWithPlace?.invoke(selectedLat, selectedLng, selectedSpotName)
+                            onLocationConfirmedWithDetails?.invoke(selectedLat, selectedLng, selectedSpotName, selectedLoggedId)
                             onDismiss()
                         },
                         modifier = Modifier.weight(1f),
