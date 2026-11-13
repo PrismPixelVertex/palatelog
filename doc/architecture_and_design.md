@@ -369,6 +369,27 @@ No UI changes are required on the Settings screen!
 - It automatically displays the newly configured provider's name, copyright attribution, and **Survey of India Compliant 🇮🇳** badge when active.
 - If fallback engages, it automatically renders the statutory fallback notice and disclaimer.
 
+### C. Location Picker with Dynamic POI Discovery & Saved Place Re-use (v1.2.33)
+
+[`LocationPickerDialog`](../app/src/main/java/com/prismpixelvertex/palatelog/core/designsystem/LocationPickerDialog.kt) provides a consolidated geospatial picker combining local Room SQLite saved venues with live third-party POI discovery:
+
+1. **Dual-Layer Marker Consolidation**:
+   - **User-Logged Saved Restaurants (`⭐ My Saved`)**: Queried from local Room SQLite (`RestaurantDao`), rendered with an embossed gold Star badge and color-coded by historical verdict (Emerald Green for `GO`, Crimson Red for `NO_GO`, Amber for `CAUTION`).
+   - **Third-Party Food POIs (`🍽️ Food POIs`)**: Fetched within a 1.5 km radius via `MapplsPoiSearchHelper` (Mappls Atlas Nearby API). Rendered as distinct Sky Blue bubble pins with cutlery icons.
+   - **Filter Chips**: Fixed anchor `⭐ My Saved` followed by `🍽️ Food POIs`. The search loading spinner is inlined into the `Food POIs` chip leading icon slot to guarantee zero layout shift during pans.
+
+2. **Collision-Free Dynamic Pin Management**:
+   - **Zoom-Scaled Labeling**: POI name badges use dynamic distance separation scaled exponentially by zoom level (`~120m` at zoom 16, tightening to `~15m` at zoom 19) so pins spread apart naturally without visual overlap.
+   - **Strict ID-Based Substitution**: When a POI or saved restaurant is selected, only the marker matching the exact unique ID is replaced by the gold `SELECTED_PIN`, preserving all adjacent pins in dense commercial clusters and completely eliminating OpenGL z-fighting.
+
+3. **Precision Zoom-Scaled Ground Taps**:
+   - **High Zoom (>= 16.8)**: Ground tap auto-latching is set to `0.0m`. Tapping anywhere on the ground drops a custom pin at the exact tapped coordinate without snapping to nearby POIs. Direct marker clicks retain 100% accuracy via `onMarkerClick`.
+   - **Card Unhook**: The selected spot card includes a 1-tap `✕` button to instantly convert any latched POI back into a custom pin.
+   - **Manual Retry Pill**: Panning (> 800m) triggers auto-search silently in the background. The floating "Search this area" pill appears only when an area search returns 0 POIs or encounters network failure/throttling.
+
+4. **Seamless Entry Editor Integration**:
+   - Forwarding `savedRestaurantId` from the picker to `EntryEditorViewModel.selectExistingRestaurantById` automatically transitions the screen title to **"Edit Visit Log"**, activates the **"PAST DISHES REMEMBERED (TAP TO ADD):"** carousel populated from Room SQLite, and links the new visit directly to the existing restaurant to prevent duplicate database records.
+
 ---
 
 ## 7. Notification Architecture & Palate Radar Specification (v1.2.23)

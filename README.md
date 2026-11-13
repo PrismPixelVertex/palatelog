@@ -26,7 +26,7 @@
 - ⏬ **Floating Scroll Indicators**: Content-aware floating down-arrow indicators on Explore and Restaurant Detail screens signaling off-screen content with 1-tap scroll down.
 - 👨‍👩‍👧 **Family Member Preferences**: Track who loved or hated what (e.g. *"Wife loved Mutton Pepper Fry; Karthik found Chicken Fry soggy"*).
 - 🛣️ **Highway & Route Search**: Search logged spots by proximity radius ("Near Me") or along highway travel corridors.
-- 🗺️ **Free Interactive Map**: Integrated with OpenStreetMap / MapLibre (zero API keys, zero cloud billing) with custom color-coded pins + 1-tap handoff to native Google Maps for turn-by-turn driving navigation.
+- 🗺️ **Interactive Maps & Restaurant POI Discovery**: Integrated Mappls (MapmyIndia) Survey-of-India compliant vector maps with graceful OSMDroid offline fallback. Features dynamic restaurant POI overlays (`🍽️ Food POIs`), embossed Star badges for saved venues (`⭐ My Saved`), zoom-scaled collision-free name badges, silent background pan auto-search with manual retry prompt, and 1-tap handoff to native Google Maps navigation.
 - 🔄 **Google Shared Drive Two-Way Sync**: Offline-first dual-mode synchronization (Mode A: Single Shared Account / Mode B: Individual Accounts with automated REST API invites, static QR code, and WhatsApp recovery).
 - 📲 **In-App Google Play Updates**: Automatic background flexible update detection, progress tracking, and explicit restart prompts.
 - 🔒 **Private vs. Shared Isolation**: Keep personal entries strictly private or share them seamlessly with family.
