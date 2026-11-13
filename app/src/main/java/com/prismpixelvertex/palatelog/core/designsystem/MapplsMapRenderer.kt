@@ -10,6 +10,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -20,6 +21,8 @@ import androidx.core.graphics.drawable.toBitmap
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import com.mappls.sdk.gestures.MoveGestureDetector
+import com.mappls.sdk.gestures.StandardScaleGestureDetector
 import com.mappls.sdk.maps.MapView
 import com.mappls.sdk.maps.MapplsMap
 import com.mappls.sdk.maps.MapplsMapOptions
@@ -48,20 +51,27 @@ fun MapplsMapRenderer(
     onSingleTap: ((latitude: Double, longitude: Double) -> Unit)? = null,
     onLongPress: ((latitude: Double, longitude: Double) -> Unit)? = null,
     onMarkerClick: ((markerId: String) -> Unit)? = null,
+    onCameraIdle: ((latitude: Double, longitude: Double, zoom: Double) -> Unit)? = null,
     onInitializationFailed: (() -> Unit)? = null
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val density = LocalDensity.current
-    val marginPx = remember(density) { with(density) { 16.dp.roundToPx() } }
+    val compassMarginTopPx = remember(density) { with(density) { 68.dp.roundToPx() } }
+    val compassMarginEndPx = remember(density) { with(density) { 12.dp.roundToPx() } }
+
+    val currentOnSingleTap by rememberUpdatedState(onSingleTap)
+    val currentOnLongPress by rememberUpdatedState(onLongPress)
+    val currentOnMarkerClick by rememberUpdatedState(onMarkerClick)
+    val currentOnCameraIdle by rememberUpdatedState(onCameraIdle)
 
     var mapplsMapInstance by remember { mutableStateOf<MapplsMap?>(null) }
     val markerIdMap = remember { mutableMapOf<Marker, String>() }
 
     val mapView = remember {
         val options = MapplsMapOptions.createFromAttributes(context, null)
-            .compassGravity(Gravity.TOP or Gravity.START)
-            .compassMargins(intArrayOf(marginPx, marginPx, marginPx, marginPx))
+            .compassGravity(Gravity.TOP or Gravity.END)
+            .compassMargins(intArrayOf(0, compassMarginTopPx, compassMarginEndPx, 0))
         MapView(context, options).apply {
             onCreate(Bundle())
             post {
@@ -70,8 +80,8 @@ fun MapplsMapRenderer(
                         FrameLayout.LayoutParams.WRAP_CONTENT,
                         FrameLayout.LayoutParams.WRAP_CONTENT
                     )
-                    params.gravity = Gravity.TOP or Gravity.START
-                    params.setMargins(marginPx, marginPx, marginPx, marginPx)
+                    params.gravity = Gravity.TOP or Gravity.END
+                    params.setMargins(0, compassMarginTopPx, compassMarginEndPx, 0)
                     compass.layoutParams = params
                     compass.requestLayout()
                 }
@@ -102,8 +112,8 @@ fun MapplsMapRenderer(
             override fun onMapReady(mapplsMap: MapplsMap) {
                 mapplsMapInstance = mapplsMap
                 try {
-                    mapplsMap.uiSettings?.compassGravity = Gravity.TOP or Gravity.START
-                    mapplsMap.uiSettings?.setCompassMargins(marginPx, marginPx, marginPx, marginPx)
+                    mapplsMap.uiSettings?.compassGravity = Gravity.TOP or Gravity.END
+                    mapplsMap.uiSettings?.setCompassMargins(0, compassMarginTopPx, compassMarginEndPx, 0)
                 } catch (_: Exception) {}
                 mapView.post {
                     mapView.compassView?.let { compass ->
@@ -111,8 +121,8 @@ fun MapplsMapRenderer(
                             FrameLayout.LayoutParams.WRAP_CONTENT,
                             FrameLayout.LayoutParams.WRAP_CONTENT
                         )
-                        params.gravity = Gravity.TOP or Gravity.START
-                        params.setMargins(marginPx, marginPx, marginPx, marginPx)
+                        params.gravity = Gravity.TOP or Gravity.END
+                        params.setMargins(0, compassMarginTopPx, compassMarginEndPx, 0)
                         compass.layoutParams = params
                         compass.requestLayout()
                     }
@@ -124,20 +134,49 @@ fun MapplsMapRenderer(
                     )
                 )
 
+                val notifyCameraChanged = {
+                    val target = mapplsMap.cameraPosition.target
+                    val currentZoom = mapplsMap.cameraPosition.zoom
+                    if (target != null) {
+                        Log.d(TAG, "Camera moved/idle: lat=${target.latitude}, lng=${target.longitude}, zoom=$currentZoom")
+                        currentOnCameraIdle?.invoke(target.latitude, target.longitude, currentZoom)
+                    }
+                }
+
+                mapplsMap.addOnCameraIdleListener {
+                    notifyCameraChanged()
+                }
+
+                mapplsMap.addOnMoveListener(object : MapplsMap.OnMoveListener {
+                    override fun onMoveBegin(detector: MoveGestureDetector) {}
+                    override fun onMove(detector: MoveGestureDetector) {}
+                    override fun onMoveEnd(detector: MoveGestureDetector) {
+                        notifyCameraChanged()
+                    }
+                })
+
+                mapplsMap.addOnScaleListener(object : MapplsMap.OnScaleListener {
+                    override fun onScaleBegin(detector: StandardScaleGestureDetector) {}
+                    override fun onScale(detector: StandardScaleGestureDetector) {}
+                    override fun onScaleEnd(detector: StandardScaleGestureDetector) {
+                        notifyCameraChanged()
+                    }
+                })
+
                 mapplsMap.addOnMapClickListener { latLng ->
-                    onSingleTap?.invoke(latLng.latitude, latLng.longitude)
+                    currentOnSingleTap?.invoke(latLng.latitude, latLng.longitude)
                     true
                 }
 
                 mapplsMap.addOnMapLongClickListener { latLng ->
-                    onLongPress?.invoke(latLng.latitude, latLng.longitude)
+                    currentOnLongPress?.invoke(latLng.latitude, latLng.longitude)
                     true
                 }
 
                 mapplsMap.setOnMarkerClickListener { marker ->
                     val clickedId = markerIdMap[marker] ?: marker.title
                     if (clickedId != null) {
-                        onMarkerClick?.invoke(clickedId)
+                        currentOnMarkerClick?.invoke(clickedId)
                     }
                     true
                 }
@@ -177,7 +216,8 @@ fun MapplsMapRenderer(
 
             markerData.customIcon?.let { iconDrawable ->
                 try {
-                    val bitmap = iconDrawable.toBitmap()
+                    val bitmap = (iconDrawable as? android.graphics.drawable.BitmapDrawable)?.bitmap
+                        ?: iconDrawable.toBitmap()
                     options.icon(iconFactory.fromBitmap(bitmap))
                 } catch (_: Exception) {
                     // Fall back to default marker if bitmap conversion fails

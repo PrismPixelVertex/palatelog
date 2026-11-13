@@ -69,13 +69,16 @@ configure<com.android.build.api.dsl.ApplicationExtension> {
         applicationId = "com.prismpixelvertex.palatelog"
         minSdk = 26
         targetSdk = 37
-        versionCode = 40
-        versionName = "1.2.32"
+        versionCode = 41
+        versionName = "1.2.33"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
             useSupportLibrary = true
         }
+
+        val mapplsRestKey = keystoreProperties.getProperty("mapplsRestKey") ?: ""
+        buildConfigField("String", "MAPPLS_REST_KEY", "\"$mapplsRestKey\"")
     }
 
     testOptions {
@@ -172,6 +175,7 @@ dependencies {
     implementation(libs.osmdroid.android)
     implementation(platform(libs.mappls.bom))
     implementation(libs.mappls.android.sdk)
+    implementation(libs.mappls.services)
 
     // Image Loading
     implementation(libs.coil.compose)

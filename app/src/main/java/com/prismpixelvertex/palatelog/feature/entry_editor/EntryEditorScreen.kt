@@ -344,6 +344,17 @@ fun EntryEditorScreen(
                     onLocationConfirmed = { lat, lng ->
                         viewModel.onLocationPicked(lat, lng)
                         showMapPicker = false
+                    },
+                    onLocationConfirmedWithDetails = { lat, lng, placeName, savedRestaurantId ->
+                        if (!savedRestaurantId.isNullOrBlank()) {
+                            viewModel.selectExistingRestaurantById(savedRestaurantId)
+                        } else {
+                            viewModel.onLocationPicked(lat, lng)
+                            if (!placeName.isNullOrBlank() && uiState.restaurantName.isBlank()) {
+                                viewModel.onRestaurantNameChanged(placeName)
+                            }
+                        }
+                        showMapPicker = false
                     }
                 )
             }

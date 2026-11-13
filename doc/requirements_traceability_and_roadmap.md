@@ -21,7 +21,7 @@ This document maps all original user requirements against the current codebase i
 | **11** | Non-intrusive smart notifications (sync health, family updates) | **100% Complete** ✅ | • `PalateNotificationManager` (`channel_sync_health`, `channel_family_sync`)<br>• Actionable OAuth & folder permission error alerts (HTTP 401/403)<br>• Silent family sync delta digest in `SyncRepository`<br>• `POST_NOTIFICATIONS` runtime permission on Android 13+ |
 | **12** | Palate Radar: On-demand highway dynamic geofencing proximity alerts | **100% Complete** ✅ | • `PalateRadarService` (On-demand location foreground service for highway trips)<br>• `PalateRadarManager` (Dynamic 500 km corridor, 100 geofence limit, priority sorting)<br>• `PalateRadarReceiver` (500m arrival warnings, single-slot consolidated notifications)<br>• `PalateRadarTileService` (Quick Settings shade tile for 1-tap activation)<br>• `DashboardScreen` (Collapsible radar banner)<br>• `SettingsScreen` (GO stops opt-in toggle, disclosure review & reset) |
 | **UI 1** | Minimalist UI during data entry & pre-filling | **100% Complete** ✅ | • **3-Second Quick Regret Logger**: 1-tap GPS, 1-tap NO-GO verdict, quick tag chips ("Watery tea", "Soggy food", "Dirty restrooms"). Saves in 3s.<br>• **Pre-filling**: Selecting an existing restaurant in `EntryEditorScreen` auto-populates past dishes as instant selectable chips with past verdicts! |
-| **UI 2** | Map View with custom markers & navigation | **100% Complete** ✅ | • Interactive OpenStreetMap (OSMDroid) with custom color-coded pins (🟢 Go, 🔴 No-Go, 🟡 Caution)<br>• Bottom sheet drawer on pin tap with "Navigate in Google Maps" handoff |
+| **UI 2** | Map View with custom markers & navigation | **100% Complete** ✅ | • Interactive Mappls (MapmyIndia) vector map with Survey of India compliance & OSMDroid offline fallback<br>• Custom color-coded pins (🟢 Go, 🔴 No-Go, 🟡 Caution)<br>• Dynamic third-party Food POIs discovery (`🍽️ Food POIs`) with zoom-adaptive name badges<br>• User saved venue overlays (`⭐ My Saved`) with 1-tap re-use & past dishes remembered in `EntryEditorScreen`<br>• High-zoom zero-latch custom pin placement & 1-tap card unhook<br>• Turn-by-turn navigation handoff via Google Maps |
 
 ---
 
@@ -77,7 +77,17 @@ Based on the gap analysis, here are the completed phases and recommended next st
     - **Clean Teardown**: Immediate geofence de-registration upon toggling Radar OFF.
     - **Google Play Compliance**: Complete Play Store justifications, prominent in-app disclosure, data safety declarations, and reviewer video script documented in `doc/play_store_location_policy_justification.md`.
 
-#### Phase 3C: Travel Corridor Search & Planning
-14. **Highway Route Corridor Search**:
+### Phase 3C: Location Picker POI Overlays, Filter Chips & Unified Re-Logging (Completed in v1.2.33 ✅)
+14. **Dynamic POI Discovery & Clutter-Free Map Overlays**:
+    - Integrated Mappls Atlas Nearby API for dining POIs within a 1.5 km radius.
+    - Exponential zoom-scaled name badge separation (`~120m` at zoom 16 to `~15m` at zoom 19).
+    - Fixed anchor filter chips (`⭐ My Saved` and `🍽️ Food POIs`) with zero-shift inlined spinner.
+    - Repositioned map compass to top-right below GPS FAB.
+    - Silent background pan search (>800m) with manual retry pill on empty/throttle.
+    - Precision ground tap latching (`0.0m` threshold at zoom >= 16.8) and 1-tap spot card unhook (`✕`).
+    - Seamless saved restaurant binding in `EntryEditorScreen`: 1-tap selection triggers "Edit Visit Log" and loads "Past Dishes Remembered" from Room SQLite.
+
+#### Phase 3D: Travel Corridor Search & Planning
+15. **Highway Route Corridor Search**:
     - Allow entering an Origin and Destination (e.g. Bangalore to Chennai) to query all logged stops within 5-10 km along that highway corridor.
 

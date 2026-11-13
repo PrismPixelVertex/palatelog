@@ -5,6 +5,8 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Path
+import android.graphics.RectF
+import android.graphics.Typeface
 import android.graphics.drawable.Drawable
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.createBitmap
@@ -39,6 +41,13 @@ object MapMarkerFactory {
     fun getCustomLocationMarker(context: Context): Drawable {
         return markerCache.getOrPut("CUSTOM_LOCATION") {
             createCustomLocationMarkerBitmap(context)
+        }
+    }
+
+    fun getPoiRestaurantMarker(context: Context, shortLabel: String? = null): Drawable {
+        val cacheKey = if (shortLabel.isNullOrBlank()) "POI_PLAIN" else "POI_${shortLabel.trim()}"
+        return markerCache.getOrPut(cacheKey) {
+            createPoiRestaurantMarkerBitmap(context, shortLabel)
         }
     }
 
@@ -103,6 +112,29 @@ object MapMarkerFactory {
             iconDrawable.setTint(Color.WHITE)
             iconDrawable.draw(canvas)
         }
+
+        // Draw Star Badge on the top-right shoulder to unmistakably signify "My Saved"
+        val badgeRadius = 14f
+        val badgeCenterX = centerX + circleRadius - 8f
+        val badgeCenterY = circleCenterY - circleRadius + 8f
+
+        val badgeBgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.WHITE
+            style = Paint.Style.FILL
+        }
+        val badgeStrokePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = "#CBD5E1".toColorInt()
+            style = Paint.Style.STROKE
+            strokeWidth = 2.5f
+        }
+        val starPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = "#F59E0B".toColorInt() // Gold
+            style = Paint.Style.FILL
+        }
+
+        canvas.drawCircle(badgeCenterX, badgeCenterY, badgeRadius, badgeBgPaint)
+        canvas.drawCircle(badgeCenterX, badgeCenterY, badgeRadius, badgeStrokePaint)
+        drawStar(canvas, badgeCenterX, badgeCenterY, outerRadius = 8f, innerRadius = 3.6f, starPaint)
 
         return bitmap.toDrawable(context.resources)
     }
@@ -188,5 +220,166 @@ object MapMarkerFactory {
         canvas.drawCircle(centerX, circleCenterY, 6f, innerDotPaint)
 
         return bitmap.toDrawable(context.resources)
+    }
+
+    private fun createPoiRestaurantMarkerBitmap(
+        context: Context,
+        shortLabel: String? = null
+    ): Drawable {
+        if (shortLabel.isNullOrBlank()) {
+            val width = 72
+            val height = 86
+            val bitmap = createBitmap(width, height)
+            val canvas = Canvas(bitmap)
+
+            val centerX = width / 2f
+            val circleRadius = 26f
+            val circleCenterY = 32f
+            val bottomTipY = 82f
+
+            val pinPath = Path().apply {
+                addCircle(centerX, circleCenterY, circleRadius, Path.Direction.CW)
+                moveTo(centerX - 10f, circleCenterY + circleRadius - 3f)
+                lineTo(centerX, bottomTipY)
+                lineTo(centerX + 10f, circleCenterY + circleRadius - 3f)
+                close()
+            }
+
+            val fillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = "#0284C7".toColorInt() // Sky Blue
+                style = Paint.Style.FILL
+            }
+
+            val strokePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                color = Color.WHITE
+                style = Paint.Style.STROKE
+                strokeWidth = 4f
+            }
+
+            canvas.drawPath(pinPath, fillPaint)
+            canvas.drawPath(pinPath, strokePaint)
+
+            val iconDrawable = ContextCompat.getDrawable(context, R.drawable.ic_marker_restaurant)
+            if (iconDrawable != null) {
+                val iconSize = 30
+                val left = (centerX - iconSize / 2).toInt()
+                val top = (circleCenterY - iconSize / 2).toInt()
+                iconDrawable.setBounds(left, top, left + iconSize, top + iconSize)
+                iconDrawable.setTint(Color.WHITE)
+                iconDrawable.draw(canvas)
+            }
+
+            return bitmap.toDrawable(context.resources)
+        }
+
+        // With Short Name Label Pill floating directly above the Sky Blue circular pin
+        val cleanLabel = shortLabel.trim()
+        val truncated = if (cleanLabel.length > 12) cleanLabel.take(11).trimEnd() + "…" else cleanLabel
+
+        val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = "#0F172A".toColorInt() // Slate 900
+            textSize = 21f
+            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+            textAlign = Paint.Align.CENTER
+        }
+
+        val textWidth = textPaint.measureText(truncated)
+        val pillPaddingH = 10f
+        val pillWidth = maxOf(textWidth + pillPaddingH * 2f, 60f)
+        val pillHeight = 28f
+
+        val circleRadius = 25f
+        val pointerHeight = 10f
+        val gap = 3f
+
+        val totalHeight = (pillHeight + gap + (circleRadius * 2f) + pointerHeight + 4f).toInt()
+        val totalWidth = maxOf(pillWidth + 10f, 72f).toInt()
+
+        val bitmap = createBitmap(totalWidth, totalHeight)
+        val canvas = Canvas(bitmap)
+
+        val centerX = totalWidth / 2f
+
+        // 1. Draw Name Pill at Top
+        val pillLeft = centerX - pillWidth / 2f
+        val pillTop = 2f
+        val pillRight = pillLeft + pillWidth
+        val pillBottom = pillTop + pillHeight
+        val pillRect = RectF(pillLeft, pillTop, pillRight, pillBottom)
+
+        val pillBgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.WHITE
+            style = Paint.Style.FILL
+        }
+        val pillStrokePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = "#CBD5E1".toColorInt() // Slate 300
+            style = Paint.Style.STROKE
+            strokeWidth = 2.5f
+        }
+
+        canvas.drawRoundRect(pillRect, 7f, 7f, pillBgPaint)
+        canvas.drawRoundRect(pillRect, 7f, 7f, pillStrokePaint)
+
+        val textY = pillTop + (pillHeight / 2f) - ((textPaint.descent() + textPaint.ascent()) / 2f)
+        canvas.drawText(truncated, centerX, textY, textPaint)
+
+        // 2. Draw Circular Sky Blue Pin below pill
+        val circleCenterY = pillBottom + gap + circleRadius
+        val bottomTipY = totalHeight - 2f
+
+        val pinPath = Path().apply {
+            addCircle(centerX, circleCenterY, circleRadius, Path.Direction.CW)
+            moveTo(centerX - 9f, circleCenterY + circleRadius - 2f)
+            lineTo(centerX, bottomTipY)
+            lineTo(centerX + 9f, circleCenterY + circleRadius - 2f)
+            close()
+        }
+
+        val fillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = "#0284C7".toColorInt() // Sky Blue
+            style = Paint.Style.FILL
+        }
+        val strokePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.WHITE
+            style = Paint.Style.STROKE
+            strokeWidth = 4f
+        }
+
+        canvas.drawPath(pinPath, fillPaint)
+        canvas.drawPath(pinPath, strokePaint)
+
+        // 3. Draw Fork-and-Knife Icon inside Circle
+        val iconDrawable = ContextCompat.getDrawable(context, R.drawable.ic_marker_restaurant)
+        if (iconDrawable != null) {
+            val iconSize = 28
+            val left = (centerX - iconSize / 2).toInt()
+            val top = (circleCenterY - iconSize / 2).toInt()
+            iconDrawable.setBounds(left, top, left + iconSize, top + iconSize)
+            iconDrawable.setTint(Color.WHITE)
+            iconDrawable.draw(canvas)
+        }
+
+        return bitmap.toDrawable(context.resources)
+    }
+
+    private fun drawStar(
+        canvas: Canvas,
+        cx: Float,
+        cy: Float,
+        outerRadius: Float,
+        innerRadius: Float,
+        paint: Paint
+    ) {
+        val path = Path()
+        val angle = (Math.PI / 5).toFloat()
+        for (i in 0 until 10) {
+            val r = if (i % 2 == 0) outerRadius else innerRadius
+            val currentAngle = (i * angle) - (Math.PI / 2).toFloat()
+            val x = cx + r * kotlin.math.cos(currentAngle)
+            val y = cy + r * kotlin.math.sin(currentAngle)
+            if (i == 0) path.moveTo(x, y) else path.lineTo(x, y)
+        }
+        path.close()
+        canvas.drawPath(path, paint)
     }
 }

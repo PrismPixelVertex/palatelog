@@ -3,7 +3,9 @@ package com.prismpixelvertex.palatelog.core.designsystem
 import android.content.Context
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
+import android.util.Log
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,25 +19,36 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.CloudOff
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.MyLocation
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Restaurant
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableDoubleStateOf
 import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -43,13 +56,42 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import com.google.android.gms.location.LocationServices
 import com.prismpixelvertex.palatelog.R
+import com.prismpixelvertex.palatelog.core.database.RestaurantDao
+import com.prismpixelvertex.palatelog.core.database.RestaurantEntity
+import com.prismpixelvertex.palatelog.core.location.GeoUtils
+import com.prismpixelvertex.palatelog.core.location.MapplsPoiSearchHelper
+import com.prismpixelvertex.palatelog.core.location.RestaurantPoi
+import com.prismpixelvertex.palatelog.core.model.RestaurantType
+import com.prismpixelvertex.palatelog.core.model.Verdict
+import dagger.hilt.EntryPoint
+import dagger.hilt.InstallIn
+import dagger.hilt.android.EntryPointAccessors
+import dagger.hilt.components.SingletonComponent
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import java.util.Locale
+
+@EntryPoint
+@InstallIn(SingletonComponent::class)
+interface LocationPickerEntryPoint {
+    fun restaurantDao(): RestaurantDao
+}
+
+enum class SelectedSpotType {
+    CUSTOM,
+    LOGGED_RESTAURANT,
+    MAPPLS_POI
+}
+
+private const val TAG = "LocationPickerDialog"
 
 @Composable
 fun LocationPickerDialog(
@@ -58,15 +100,27 @@ fun LocationPickerDialog(
     userGpsLatitude: Double? = null,
     userGpsLongitude: Double? = null,
     onDismiss: () -> Unit,
-    onLocationConfirmed: (latitude: Double, longitude: Double) -> Unit
+    onLocationConfirmed: (latitude: Double, longitude: Double) -> Unit,
+    onLocationConfirmedWithPlace: ((latitude: Double, longitude: Double, placeName: String?) -> Unit)? = null,
+    onLocationConfirmedWithDetails: ((latitude: Double, longitude: Double, placeName: String?, savedRestaurantId: String?) -> Unit)? = null
 ) {
     val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
     val fusedLocationClient = remember(context) { LocationServices.getFusedLocationProviderClient(context) }
     val connectivityManager = remember(context) { context.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager }
     val isNetworkAvailable = remember(context) {
         val activeNetwork = connectivityManager?.activeNetwork
         val caps = connectivityManager?.getNetworkCapabilities(activeNetwork)
         caps?.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) == true
+    }
+
+    val restaurantDao = remember(context) {
+        try {
+            EntryPointAccessors.fromApplication(context.applicationContext, LocationPickerEntryPoint::class.java).restaurantDao()
+        } catch (e: Exception) {
+            Log.w(TAG, "Could not resolve RestaurantDao from application context", e)
+            null
+        }
     }
 
     // Default fallback coordinates if invalid (Bangalore default or given initial)
@@ -78,6 +132,175 @@ fun LocationPickerDialog(
     var centerLat by remember { mutableDoubleStateOf(startLat) }
     var centerLng by remember { mutableDoubleStateOf(startLng) }
     var animationTrigger by remember { mutableLongStateOf(0L) }
+
+    // Live camera position and zoom tracked via map callbacks
+    var cameraCenterLat by remember { mutableDoubleStateOf(startLat) }
+    var cameraCenterLng by remember { mutableDoubleStateOf(startLng) }
+    var cameraZoom by remember { mutableDoubleStateOf(16.0) }
+
+    // POI & Saved Restaurant Layer Controls
+    var showPois by remember { mutableStateOf(true) }
+    var showLogged by remember { mutableStateOf(true) }
+    var isSearchingPois by remember { mutableStateOf(false) }
+    var mapplsPois by remember { mutableStateOf<List<RestaurantPoi>>(emptyList()) }
+    var lastSearchedCoords by remember { mutableStateOf<Pair<Double, Double>?>(null) }
+    var searchFailedOrEmpty by remember { mutableStateOf(false) }
+
+    // Selected spot details for display banner and confirmation
+    var selectedSpotName by remember { mutableStateOf<String?>(null) }
+    var selectedSpotSnippet by remember { mutableStateOf<String?>(null) }
+    var selectedSpotType by remember { mutableStateOf(SelectedSpotType.CUSTOM) }
+    var selectedPoiId by remember { mutableStateOf<String?>(null) }
+    var selectedLoggedId by remember { mutableStateOf<String?>(null) }
+
+    // Fetch user-logged restaurants from local Room database
+    val localRestaurants by produceState<List<RestaurantEntity>>(initialValue = emptyList(), restaurantDao) {
+        try {
+            restaurantDao?.getAllRestaurants()?.collect { entities ->
+                value = entities.filter { it.latitude != 0.0 && it.longitude != 0.0 }
+            }
+        } catch (_: CancellationException) {
+            // Normal coroutine cancellation when dialog is dismissed
+        } catch (e: Exception) {
+            Log.w(TAG, "Error collecting local restaurants", e)
+        }
+    }
+
+    // Initial search for restaurant POIs around initial coordinates
+    LaunchedEffect(startLat, startLng, isNetworkAvailable) {
+        if (isNetworkAvailable) {
+            isSearchingPois = true
+            val results = MapplsPoiSearchHelper.searchNearbyRestaurants(startLat, startLng, radiusMeters = 1500)
+            if (results.isNotEmpty()) {
+                mapplsPois = results
+                searchFailedOrEmpty = false
+            } else {
+                searchFailedOrEmpty = true
+            }
+            lastSearchedCoords = Pair(startLat, startLng)
+            isSearchingPois = false
+        }
+    }
+
+    // Auto-search for restaurant POIs when user pans far away from the previous search area
+    LaunchedEffect(cameraCenterLat, cameraCenterLng, showPois, isNetworkAvailable) {
+        if (showPois && isNetworkAvailable && !isSearchingPois) {
+            val dist = lastSearchedCoords?.let {
+                GeoUtils.calculateDistanceKm(it.first, it.second, cameraCenterLat, cameraCenterLng)
+            } ?: Double.MAX_VALUE
+            if (dist > 0.8) {
+                delay(500)
+                isSearchingPois = true
+                val newPois = MapplsPoiSearchHelper.searchNearbyRestaurants(cameraCenterLat, cameraCenterLng, radiusMeters = 1500)
+                if (newPois.isNotEmpty()) {
+                    mapplsPois = (mapplsPois + newPois).distinctBy { it.id }
+                    searchFailedOrEmpty = false
+                } else {
+                    searchFailedOrEmpty = true
+                }
+                lastSearchedCoords = Pair(cameraCenterLat, cameraCenterLng)
+                isSearchingPois = false
+            }
+        }
+    }
+
+    val defaultSpotTitle = stringResource(R.string.restaurant_detail_selected_spot_default)
+    val defaultSpotSnippet = stringResource(R.string.map_tap_actions_sub)
+
+    // Build consolidated marker list (Saved + Food POIs + Selected Pin)
+    val markers = remember(
+        selectedLat, selectedLng, selectedSpotName, selectedSpotSnippet, selectedSpotType,
+        selectedPoiId, selectedLoggedId,
+        showPois, mapplsPois, showLogged, localRestaurants,
+        cameraCenterLat, cameraCenterLng, cameraZoom,
+        defaultSpotTitle, defaultSpotSnippet
+    ) {
+        buildList {
+            // 1. User-logged restaurants from local DB (colored by verdict: Green, Red, Amber)
+            if (showLogged) {
+                localRestaurants.forEach { rest ->
+                    val isCurrentlySelected = selectedLoggedId != null && rest.id == selectedLoggedId
+                    // Omit duplicate unselected marker at the exact selected coordinate to prevent z-fighting
+                    if (!isCurrentlySelected) {
+                        val verdict = try { Verdict.valueOf(rest.overallVerdict) } catch (_: Exception) { Verdict.GO }
+                        val type = try { RestaurantType.valueOf(rest.restaurantType) } catch (_: Exception) { RestaurantType.DINE_IN }
+                        add(
+                            PalateMapMarker(
+                                id = "USER_${rest.id}",
+                                latitude = rest.latitude,
+                                longitude = rest.longitude,
+                                title = rest.name,
+                                snippet = "${verdict.name} • ${rest.cuisine.ifBlank { rest.restaurantType }}",
+                                customIcon = MapMarkerFactory.getRestaurantMarker(context, verdict, type)
+                            )
+                        )
+                    }
+                }
+            }
+
+            // 2. Food POIs (distinct Sky Blue bubble with collision-free short name overlay)
+            if (showPois) {
+                // Sort POIs relative to active camera center so the visible area gets label priority
+                val prioritizedPois = mapplsPois.sortedBy { poi ->
+                    GeoUtils.calculateDistanceKm(cameraCenterLat, cameraCenterLng, poi.latitude, poi.longitude)
+                }
+
+                // Dynamic zoom-scaled separation distance (in km):
+                // At zoom 15: ~240m. At zoom 16: ~120m. At zoom 17: ~60m. At zoom 18: ~30m. At zoom 19: ~15m.
+                // As the user zooms in, pins spread apart on screen, so more pins cleanly show their names!
+                val zoomScaleFactor = Math.pow(2.0, (16.0 - cameraZoom).coerceIn(-4.0, 3.0))
+                val labelMinDistanceKm = 0.120 * zoomScaleFactor
+                val pinBufferDistanceKm = labelMinDistanceKm * 0.35
+
+                val labeledLocations = mutableListOf<Pair<Double, Double>>()
+
+                prioritizedPois.forEach { poi ->
+                    val isCurrentlySelected = selectedPoiId != null && poi.id == selectedPoiId
+
+                    // Omit duplicate unselected POI marker at the exact selected coordinate to prevent z-fighting
+                    if (!isCurrentlySelected) {
+                        val isTooCloseToOtherLabel = labeledLocations.any { (lat, lng) ->
+                            GeoUtils.calculateDistanceKm(poi.latitude, poi.longitude, lat, lng) < labelMinDistanceKm
+                        }
+                        val isTooCloseToAdjacentPin = prioritizedPois.any { other ->
+                            other.id != poi.id && GeoUtils.calculateDistanceKm(poi.latitude, poi.longitude, other.latitude, other.longitude) < pinBufferDistanceKm
+                        }
+                        val showNamePill = !isTooCloseToOtherLabel && !isTooCloseToAdjacentPin && labeledLocations.size < 25
+                        if (showNamePill) {
+                            labeledLocations.add(Pair(poi.latitude, poi.longitude))
+                        }
+
+                        val poiIcon = MapMarkerFactory.getPoiRestaurantMarker(
+                            context = context,
+                            shortLabel = if (showNamePill) poi.name else null
+                        )
+                        add(
+                            PalateMapMarker(
+                                id = "POI_${poi.id}",
+                                latitude = poi.latitude,
+                                longitude = poi.longitude,
+                                title = poi.name,
+                                snippet = poi.address,
+                                customIcon = poiIcon
+                            )
+                        )
+                    }
+                }
+            }
+
+            // 3. User's currently selected pin (Gold/Amber custom location marker)
+            add(
+                PalateMapMarker(
+                    id = "SELECTED_PIN",
+                    latitude = selectedLat,
+                    longitude = selectedLng,
+                    title = selectedSpotName ?: defaultSpotTitle,
+                    snippet = selectedSpotSnippet ?: defaultSpotSnippet,
+                    customIcon = MapMarkerFactory.getCustomLocationMarker(context)
+                )
+            )
+        }
+    }
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -128,7 +351,7 @@ fun LocationPickerDialog(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
                 // Map View Container
                 Box(
@@ -143,25 +366,236 @@ fun LocationPickerDialog(
                         centerLongitude = centerLng,
                         zoomLevel = 16.0,
                         animationTrigger = animationTrigger,
-                        markers = listOf(
-                            PalateMapMarker(
-                                id = "SELECTED_PIN",
-                                latitude = selectedLat,
-                                longitude = selectedLng,
-                                title = stringResource(R.string.restaurant_detail_selected_spot_default),
-                                snippet = stringResource(R.string.map_tap_actions_sub),
-                                customIcon = MapMarkerFactory.getCustomLocationMarker(context)
-                            )
-                        ),
+                        markers = markers,
                         onSingleTap = { lat, lng ->
-                            selectedLat = lat
-                            selectedLng = lng
+                            // Dynamic zoom-scaled touch target for map ground taps:
+                            // At high zoom (>= 16.8), the user is zoomed in for precision placement.
+                            // Direct marker taps are handled with 100% accuracy by onMarkerClick.
+                            // Ground taps at high zoom should NEVER auto-latch to a nearby POI,
+                            // allowing the user to freely drop a custom pin anywhere (even right next to a POI).
+                            // At zoom < 16.8, allow a small finger touch-slop tolerance (e.g. ~8m at zoom 16).
+                            val latchThresholdKm = if (cameraZoom >= 16.8) {
+                                0.0
+                            } else {
+                                0.008 * Math.pow(2.0, (16.0 - cameraZoom).coerceIn(-2.0, 2.0))
+                            }
+
+                            val nearbyLogged = if (showLogged && latchThresholdKm > 0.0) {
+                                localRestaurants.minByOrNull {
+                                    GeoUtils.calculateDistanceKm(lat, lng, it.latitude, it.longitude)
+                                }?.takeIf { GeoUtils.calculateDistanceKm(lat, lng, it.latitude, it.longitude) < latchThresholdKm }
+                            } else null
+
+                            val nearbyPoi = if (showPois && latchThresholdKm > 0.0) {
+                                mapplsPois.minByOrNull {
+                                    GeoUtils.calculateDistanceKm(lat, lng, it.latitude, it.longitude)
+                                }?.takeIf { GeoUtils.calculateDistanceKm(lat, lng, it.latitude, it.longitude) < latchThresholdKm }
+                            } else null
+
+                            when {
+                                nearbyLogged != null -> {
+                                    selectedLat = nearbyLogged.latitude
+                                    selectedLng = nearbyLogged.longitude
+                                    selectedSpotName = nearbyLogged.name
+                                    selectedSpotSnippet = "${nearbyLogged.overallVerdict} • ${nearbyLogged.cuisine.ifBlank { nearbyLogged.restaurantType }}"
+                                    selectedSpotType = SelectedSpotType.LOGGED_RESTAURANT
+                                    selectedLoggedId = nearbyLogged.id
+                                    selectedPoiId = null
+                                }
+                                nearbyPoi != null -> {
+                                    selectedLat = nearbyPoi.latitude
+                                    selectedLng = nearbyPoi.longitude
+                                    selectedSpotName = nearbyPoi.name
+                                    selectedSpotSnippet = nearbyPoi.address
+                                    selectedSpotType = SelectedSpotType.MAPPLS_POI
+                                    selectedPoiId = nearbyPoi.id
+                                    selectedLoggedId = null
+                                }
+                                else -> {
+                                    selectedLat = lat
+                                    selectedLng = lng
+                                    selectedSpotName = null
+                                    selectedSpotSnippet = null
+                                    selectedSpotType = SelectedSpotType.CUSTOM
+                                    selectedPoiId = null
+                                    selectedLoggedId = null
+                                }
+                            }
                         },
                         onLongPress = { lat, lng ->
                             selectedLat = lat
                             selectedLng = lng
+                            selectedSpotName = null
+                            selectedSpotSnippet = null
+                            selectedSpotType = SelectedSpotType.CUSTOM
+                            selectedPoiId = null
+                            selectedLoggedId = null
+                        },
+                        onMarkerClick = { markerId ->
+                            when {
+                                markerId.startsWith("USER_") -> {
+                                    val restId = markerId.removePrefix("USER_")
+                                    val match = localRestaurants.find { it.id == restId }
+                                    if (match != null) {
+                                        selectedLat = match.latitude
+                                        selectedLng = match.longitude
+                                        selectedSpotName = match.name
+                                        selectedSpotSnippet = "${match.overallVerdict} • ${match.cuisine.ifBlank { match.restaurantType }}"
+                                        selectedSpotType = SelectedSpotType.LOGGED_RESTAURANT
+                                        selectedLoggedId = match.id
+                                        selectedPoiId = null
+                                    }
+                                }
+                                markerId.startsWith("POI_") -> {
+                                    val poiId = markerId.removePrefix("POI_")
+                                    val match = mapplsPois.find { it.id == poiId }
+                                    if (match != null) {
+                                        selectedLat = match.latitude
+                                        selectedLng = match.longitude
+                                        selectedSpotName = match.name
+                                        selectedSpotSnippet = match.address
+                                        selectedSpotType = SelectedSpotType.MAPPLS_POI
+                                        selectedPoiId = match.id
+                                        selectedLoggedId = null
+                                    }
+                                }
+                                markerId == "SELECTED_PIN" -> {
+                                    // Already focused on the selected pin
+                                }
+                            }
+                        },
+                        onCameraIdle = { lat, lng, zoom ->
+                            cameraCenterLat = lat
+                            cameraCenterLng = lng
+                            cameraZoom = zoom
                         }
                     )
+
+                    // Floating Filter Chips at Top-Start (Saved Restaurants & Food POIs toggle)
+                    Row(
+                        modifier = Modifier
+                            .align(Alignment.TopStart)
+                            .padding(8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        if (localRestaurants.isNotEmpty()) {
+                            FilterChip(
+                                selected = showLogged,
+                                onClick = { showLogged = !showLogged },
+                                label = {
+                                    Text(
+                                        text = stringResource(R.string.location_picker_filter_logged),
+                                        style = MaterialTheme.typography.labelSmall
+                                    )
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = Icons.Default.Bookmark,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(14.dp)
+                                    )
+                                },
+                                colors = FilterChipDefaults.filterChipColors(
+                                    selectedContainerColor = MaterialTheme.colorScheme.secondaryContainer,
+                                    selectedLabelColor = MaterialTheme.colorScheme.onSecondaryContainer
+                                )
+                            )
+                        }
+
+                        FilterChip(
+                            selected = showPois,
+                            onClick = {
+                                val nextState = !showPois
+                                showPois = nextState
+                                if (nextState && mapplsPois.isEmpty() && isNetworkAvailable) {
+                                    coroutineScope.launch {
+                                        isSearchingPois = true
+                                        val newPois = MapplsPoiSearchHelper.searchNearbyRestaurants(cameraCenterLat, cameraCenterLng, 1500)
+                                        if (newPois.isNotEmpty()) {
+                                            mapplsPois = newPois
+                                            searchFailedOrEmpty = false
+                                        } else {
+                                            searchFailedOrEmpty = true
+                                        }
+                                        lastSearchedCoords = Pair(cameraCenterLat, cameraCenterLng)
+                                        isSearchingPois = false
+                                    }
+                                }
+                            },
+                            label = {
+                                Text(
+                                    text = stringResource(R.string.location_picker_filter_food_pois),
+                                    style = MaterialTheme.typography.labelSmall
+                                )
+                            },
+                            leadingIcon = {
+                                if (isSearchingPois) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(14.dp),
+                                        strokeWidth = 1.75.dp,
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                                    )
+                                } else {
+                                    Icon(
+                                        imageVector = Icons.Default.Restaurant,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(14.dp)
+                                    )
+                                }
+                            },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        )
+                    }
+
+                    // Floating "Search this area" prompt when search in the current area was empty or failed
+                    val shouldShowSearchAreaButton = showPois && searchFailedOrEmpty && !isSearchingPois
+
+                    if (shouldShowSearchAreaButton) {
+                        Surface(
+                            shape = RoundedCornerShape(16.dp),
+                            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f),
+                            shadowElevation = 4.dp,
+                            modifier = Modifier
+                                .align(Alignment.BottomCenter)
+                                .padding(bottom = 8.dp)
+                                .clickable {
+                                    coroutineScope.launch {
+                                        isSearchingPois = true
+                                        val newPois = MapplsPoiSearchHelper.searchNearbyRestaurants(cameraCenterLat, cameraCenterLng, 1500)
+                                        if (newPois.isNotEmpty()) {
+                                            mapplsPois = (mapplsPois + newPois).distinctBy { it.id }
+                                            searchFailedOrEmpty = false
+                                        } else {
+                                            searchFailedOrEmpty = true
+                                        }
+                                        lastSearchedCoords = Pair(cameraCenterLat, cameraCenterLng)
+                                        isSearchingPois = false
+                                    }
+                                }
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Refresh,
+                                    contentDescription = null,
+                                    tint = AmberPrimary,
+                                    modifier = Modifier.size(14.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text(
+                                    text = stringResource(R.string.location_picker_search_area),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            }
+                        }
+                    }
 
                     // Re-center on user's current GPS location button
                     FloatingActionButton(
@@ -173,12 +607,18 @@ fun LocationPickerDialog(
                                         centerLng = loc.longitude
                                         selectedLat = loc.latitude
                                         selectedLng = loc.longitude
+                                        selectedSpotName = null
+                                        selectedSpotSnippet = null
+                                        selectedSpotType = SelectedSpotType.CUSTOM
                                         animationTrigger = System.currentTimeMillis()
                                     } else if (userGpsLatitude != null && userGpsLongitude != null && userGpsLatitude != 0.0) {
                                         centerLat = userGpsLatitude
                                         centerLng = userGpsLongitude
                                         selectedLat = userGpsLatitude
                                         selectedLng = userGpsLongitude
+                                        selectedSpotName = null
+                                        selectedSpotSnippet = null
+                                        selectedSpotType = SelectedSpotType.CUSTOM
                                         animationTrigger = System.currentTimeMillis()
                                     } else {
                                         centerLat = selectedLat
@@ -192,6 +632,9 @@ fun LocationPickerDialog(
                                     centerLng = userGpsLongitude
                                     selectedLat = userGpsLatitude
                                     selectedLng = userGpsLongitude
+                                    selectedSpotName = null
+                                    selectedSpotSnippet = null
+                                    selectedSpotType = SelectedSpotType.CUSTOM
                                     animationTrigger = System.currentTimeMillis()
                                 }
                             }
@@ -203,11 +646,98 @@ fun LocationPickerDialog(
                             .padding(8.dp)
                             .size(40.dp)
                     ) {
-                        Icon(Icons.Default.MyLocation, contentDescription = stringResource(R.string.location_picker_my_location), modifier = Modifier.size(20.dp))
+                        Icon(
+                            Icons.Default.MyLocation,
+                            contentDescription = stringResource(R.string.location_picker_my_location),
+                            modifier = Modifier.size(20.dp)
+                        )
                     }
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Selected spot info card (if a POI or Logged restaurant was tapped)
+                if (selectedSpotName != null) {
+                    Card(
+                        shape = RoundedCornerShape(8.dp),
+                        colors = CardDefaults.cardColors(
+                            containerColor = if (selectedSpotType == SelectedSpotType.MAPPLS_POI) {
+                                MaterialTheme.colorScheme.surfaceVariant
+                            } else {
+                                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.4f)
+                            }
+                        ),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 6.dp)
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                imageVector = if (selectedSpotType == SelectedSpotType.MAPPLS_POI) {
+                                    Icons.Default.Restaurant
+                                } else {
+                                    Icons.Default.Bookmark
+                                },
+                                contentDescription = null,
+                                tint = if (selectedSpotType == SelectedSpotType.MAPPLS_POI) AmberPrimary else MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = selectedSpotName ?: "",
+                                    style = MaterialTheme.typography.labelMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                                )
+                                if (!selectedSpotSnippet.isNullOrBlank()) {
+                                    Text(
+                                        text = selectedSpotSnippet ?: "",
+                                        style = MaterialTheme.typography.bodySmall,
+                                        fontSize = 11.sp,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        maxLines = 1,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                }
+                            }
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = if (selectedSpotType == SelectedSpotType.MAPPLS_POI) {
+                                    stringResource(R.string.location_picker_selected_poi_badge)
+                                } else {
+                                    stringResource(R.string.location_picker_selected_logged_badge)
+                                },
+                                style = MaterialTheme.typography.labelSmall,
+                                fontSize = 10.sp,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            IconButton(
+                                onClick = {
+                                    selectedSpotName = null
+                                    selectedSpotSnippet = null
+                                    selectedSpotType = SelectedSpotType.CUSTOM
+                                    selectedPoiId = null
+                                    selectedLoggedId = null
+                                },
+                                modifier = Modifier.size(24.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Close,
+                                    contentDescription = stringResource(R.string.action_close),
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(14.dp)
+                                )
+                            }
+                        }
+                    }
+                }
 
                 // Coordinates readout & Offline Notice
                 Row(
@@ -216,7 +746,11 @@ fun LocationPickerDialog(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = stringResource(R.string.restaurant_detail_coords_fmt, String.format(Locale.US, "%.5f", selectedLat), String.format(Locale.US, "%.5f", selectedLng)),
+                        text = stringResource(
+                            R.string.restaurant_detail_coords_fmt,
+                            String.format(Locale.US, "%.5f", selectedLat),
+                            String.format(Locale.US, "%.5f", selectedLng)
+                        ),
                         style = MaterialTheme.typography.bodySmall,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -247,7 +781,7 @@ fun LocationPickerDialog(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(10.dp))
 
                 // Action Buttons
                 Row(
@@ -265,13 +799,19 @@ fun LocationPickerDialog(
                     Button(
                         onClick = {
                             onLocationConfirmed(selectedLat, selectedLng)
+                            onLocationConfirmedWithPlace?.invoke(selectedLat, selectedLng, selectedSpotName)
+                            onLocationConfirmedWithDetails?.invoke(selectedLat, selectedLng, selectedSpotName, selectedLoggedId)
                             onDismiss()
                         },
                         modifier = Modifier.weight(1f),
                         shape = RoundedCornerShape(Dimens.RadiusMedium),
                         colors = ButtonDefaults.buttonColors(containerColor = AmberPrimary)
                     ) {
-                        Text(stringResource(R.string.location_picker_confirm), color = MaterialTheme.colorScheme.onPrimary, fontWeight = FontWeight.Bold)
+                        Text(
+                            stringResource(R.string.location_picker_confirm),
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            fontWeight = FontWeight.Bold
+                        )
                     }
                 }
             }

@@ -593,6 +593,14 @@
     <string name="quick_capture_retry_address">Fetch Address</string>
     <string name="quick_capture_network_offline_address_failed">Network offline: Coordinates saved, but address couldn\'t be auto-filled.</string>
     <string name="location_picker_offline_notice">Offline: Address auto-detection unavailable</string>
+    <string name="location_picker_filter_food_pois">Food POIs</string>
+    <string name="location_picker_filter_logged">My Saved</string>
+    <string name="location_picker_selected_poi_badge">Mappls POI</string>
+    <string name="location_picker_selected_logged_badge">PalateLog</string>
+    <string name="location_picker_poi_default_title">Restaurant POI</string>
+    <string name="location_picker_poi_default_snippet">Food &amp; Dining Point of Interest</string>
+    <string name="location_picker_search_area">Search this area</string>
+    <string name="location_picker_searching_pois">Finding restaurants…</string>
     <string name="entry_editor_network_offline_address_failed">Network offline: Coordinates saved, but address couldn\'t be auto-filled.</string>
     <string name="entry_editor_retry_address">Fetch Address</string>
     <string name="entry_editor_retry_address_desc">Network was offline • Tap to fetch address</string>

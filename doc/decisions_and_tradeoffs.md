@@ -276,3 +276,29 @@ Notifications can be either a high-leverage utility or an intrusive annoyance th
   - **Maximum Utility**: Delivers the anti-regret warning at the exact moment of highway decision-making.
 * **Trade-off**: Requires the user to remember to tap the Quick Settings tile when starting a highway drive (which can be aided by an optional Bluetooth car-connect prompt in future iterations).
 
+---
+
+## ADR 014: Interactive Restaurant POI Discovery, Clutter-Free Dynamic Pin Management, and Unified Saved Place Re-use (v1.2.33)
+
+### Context
+When logging a dining experience in [`LocationPickerDialog`](../app/src/main/java/com/prismpixelvertex/palatelog/core/designsystem/LocationPickerDialog.kt), users previously had to drop a blank pin and manually re-type the restaurant name, cuisine, and address—even when dining at well-known venues or places they had already visited. Furthermore, base vector map annotations were suppressed, leaving third-party dining POIs invisible.
+
+### Options Considered
+* **Option A: Pure Address Geocoding Search Bar**: Requires user typing and autocomplete API calls; doesn't provide visual spatial awareness of dining options on the map.
+* **Option B: Native Map Vector Layer Text**: Enabling raw third-party map labels results in dense, unclickable, and unselectable text overlapping with user pins.
+* **Option C: Consolidated Dynamic Dual-Layer Discovery (Selected)**:
+  - **Dual-Layer Marker Strategy**: Renders saved user spots (`⭐ My Saved`) with embossed Star badges and verdict colors, alongside live third-party dining POIs (`🍽️ Food POIs`) using Mappls Atlas Nearby API.
+  - **Zoom-Adaptive Anti-Clutter**: Exponentially scales label separation distances from zoom 16 (~120m) to zoom 19 (~15m). Pins spread apart naturally as the user zooms in without overlapping text.
+  - **Strict ID-Based Substitution**: Eliminates OpenGL z-fighting between the selected pin and unselected markers by checking matching unique IDs rather than geographic radii, ensuring adjacent POIs in dense commercial clusters remain visible.
+  - **Precision Zoom-Scaled Ground Taps**: Sets ground tap auto-latching to `0.0m` at zoom >= 16.8, allowing users to drop custom pins directly adjacent to existing venues without magnetic snapping. Provides a 1-tap `✕` button on the spot card to instantly unhook any latched POI.
+  - **Silent Background Pan Auto-Search with Manual Retry Pill**: Auto-search triggers silently on pans (> 800m). The floating "Search this area" prompt appears only when an area search returns 0 POIs or encounters network failure/throttling.
+  - **Unified Entry Editor Linkage**: Forwarding `savedRestaurantId` automatically transitions `EntryEditorScreen` into "Edit Visit Log", queries Room SQLite for previous dishes, and activates the "PAST DISHES REMEMBERED (TAP TO ADD):" carousel for 1-tap re-logging while linking to the existing restaurant to prevent duplicate records.
+
+### Decision & Trade-offs
+* **Benefits**:
+  - **Frictionless Re-Logging**: Users can 1-tap re-use existing restaurants and re-log past dishes in seconds.
+  - **Visual Clarity**: Differentiates personal dining history from external POIs with zero layout shift (inlined spinner, repositioned compass).
+  - **Zero Duplicates**: Guarantees database integrity by preventing accidental duplicate restaurant entities.
+* **Trade-off**: Requires network access for third-party POI discovery (gracefully degrades to local Room SQLite saved places when offline).
+
+

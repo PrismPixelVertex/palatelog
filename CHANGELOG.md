@@ -5,6 +5,34 @@ All notable changes to PalateLog will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.33] - 2026-11-13
+
+### Added & Enhanced (Restaurant POI Overlays & Picker Resiliency)
+- **Automatic Restaurant POI Overlays with OSM Fallback (`LocationPickerDialog`)**:
+  - Integrated Mappls Nearby Search API using category code `DINFOD` (Restaurants & Dining) via `MapplsPoiSearchHelper`, coupled with an automatic OpenStreetMap (Nominatim) fallback (`amenity=restaurant`) to reliably surface nearby dining establishments even when Mappls Atlas REST API credentials are unconfigured or unavailable.
+  - Added support for configuring `mapplsRestKey` via `keystore.properties` into `BuildConfig.MAPPLS_REST_KEY` for seamless Mappls Atlas REST API authentication.
+  - Rendered dedicated Sky Blue (`#0284C7`) circular map bubble POI pins with floating readable short name capsule pills (21f bold typography, max 12 chars, 28f pill height). Implemented dynamic zoom-scaled anti-collision distribution (scaling between 15m at zoom 19+ to 120m at zoom 16) prioritizing the active camera center and enforcing pin-buffer clearances so adjacent pins never collide or obscure neighbors.
+  - Wired live camera move and zoom callbacks across Mappls `OnCameraIdleListener`, `OnMoveListener.onMoveEnd`, and `OnScaleListener.onScaleEnd` using `rememberUpdatedState` so panning and pinch-zooming reliably updates visible POIs and triggers auto-search upon moving > 800m.
+  - Accumulated newly discovered POIs across viewport pans to preserve previously loaded locations, accompanied by a floating "Search this area" prompt.
+  - Tapping any restaurant POI pin or tapping the map within 35m of an existing POI snaps the selection, displays the place card, and suppresses duplicate unselected markers to completely eliminate OpenGL z-fighting.
+  - Automatically populates the restaurant name into `EntryEditorScreen` and `QuickCaptureScreen` when confirmed if the user has not yet entered a name.
+- **Differentiated User-Logged Restaurants vs Third-Party POIs**:
+  - Displayed all user-registered restaurants from the local Room SQLite database (`RestaurantDao`) with an embossed gold Star badge (`⭐`) on the pin shoulder, making personal saved spots instantly distinguishable from third-party map POIs.
+  - Color-coded by verdict (Emerald Green for `GO`, Crimson Red for `NO_GO`, Amber Yellow for `CAUTION`) with no distance restrictions.
+  - Enables 1-tap re-use of previously saved dining locations to prevent accidental duplicate entries.
+  - Linked saved restaurant selection in `LocationPickerDialog` to `EntryEditorViewModel.selectExistingRestaurantById`: seamlessly transitions screen title to "Edit Visit Log", activates the "PAST DISHES REMEMBERED (TAP TO ADD):" carousel with past dishes loaded from Room SQLite, and auto-populates historical restaurant metadata without losing in-progress draft inputs.
+- **Restored Interactive Map Pin & Annotation Rendering**:
+  - Removed base vector layer suppression in `MapplsMapRenderer` and `PalateInteractiveMap` that had inadvertently suppressed map annotation layers, guaranteeing that tapped custom location pins (`SELECTED_PIN`) and saved restaurant markers appear immediately on screen.
+  - Added floating Material 3 filter chips (`⭐ My Saved` as fixed anchor followed by `🍽️ Food POIs`) at the top of the map. Inlined the POI search loading indicator into the chip's leading icon slot, completely eliminating button width jumping and horizontal layout shift during map panning.
+  - Relocated the map north-south orientation compass to the top-right corner below the GPS FAB in `MapplsMapRenderer`, completely eliminating overlap with the `My Saved` and `Food POIs` filter chips on the top-left.
+  - Refined "Search this area" UX: auto-searches silently on pan without flashing; surfaces the floating retry pill only when an area search returns 0 results or fails (network timeout/throttling).
+  - Silenced benign `CancellationException` in `LocationPickerDialog` during dialog dismiss to prevent false-positive `Error collecting local restaurants` logcat warnings.
+  - Fixed clustered POI suppression: ensured marker replacement strictly matches the selected POI's unique ID, preserving all other adjacent blue POIs within dense clusters.
+  - Zoom-scaled ground tap latching: disabled auto-latching on ground taps at high zoom levels (>= 16.8) so users can drop custom pins right next to existing POIs with pinpoint precision, while direct marker taps continue to select POIs with 100% accuracy.
+  - Added a 1-tap unlatch button (`✕`) on the selected spot details card to instantly convert any latched POI back into a custom pin.
+- **Zero-Crash Resilience & Offline Graceful Degradation**:
+  - Network-gated POI search with safe fallback to local Room SQLite saved places and custom pin placement when offline or when external POI services are unreachable.
+
 ## [1.2.32] - 2026-11-12
 
 ### Fixed & Enhanced (Release Crash Hardening & Resource Preservation)

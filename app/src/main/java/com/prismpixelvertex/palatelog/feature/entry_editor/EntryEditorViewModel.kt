@@ -176,6 +176,16 @@ class EntryEditorViewModel @Inject constructor(
         }
     }
 
+    fun selectExistingRestaurantById(restaurantId: String) {
+        viewModelScope.launch {
+            val existing = restaurantDao.getRestaurantByIdSync(restaurantId)
+                ?: _uiState.value.existingRestaurants.find { it.id == restaurantId }
+            if (existing != null) {
+                selectExistingRestaurant(existing)
+            }
+        }
+    }
+
     fun onRestaurantNameChanged(name: String) {
         _uiState.value = _uiState.value.copy(restaurantName = name)
     }
