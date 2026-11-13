@@ -5,6 +5,24 @@ All notable changes to PalateLog will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.33] - 2026-11-13
+
+### Added & Enhanced (Restaurant POI Overlays & Clutter Suppression in Location Picker)
+- **Automatic Mappls Restaurant POI Overlays (`LocationPickerDialog`)**:
+  - Integrated Mappls Nearby Search API using official category code `DINFOD` (Restaurants & Dining) via `MapplsPoiSearchHelper` to automatically surface real dining establishments around the pinned/camera location.
+  - Rendered dedicated Sky Blue (`#0284C7`) fork-and-knife restaurant POI pins distinct from user-logged restaurants and custom pin markers.
+  - Tapping any restaurant POI pin instantly snaps the coordinates and displays a detailed place information card with place name and address.
+  - Automatically populates the restaurant name into `EntryEditorScreen` and `QuickCaptureScreen` when confirmed if the user has not yet entered a name.
+- **Differentiated User-Logged Restaurants vs Third-Party POIs**:
+  - Displayed nearby restaurants from the local Room SQLite database (`RestaurantDao`) within the picker map, color-coded by their PalateLog verdict (Emerald Green for `GO`, Crimson Red for `NO_GO`, Amber Yellow for `CAUTION`).
+  - Enables 1-tap re-use of previously saved dining locations to prevent accidental duplicate entries.
+- **Basemap Vector Clutter Suppression & Floating Layer Filter Chips**:
+  - Added vector POI layer suppression (`PropertyFactory.visibility(Property.NONE)`) in `MapplsMapRenderer` and `PalateInteractiveMap` to cleanly eliminate non-food visual clutter (ATMs, banks, hospitals, schools, fuel stations).
+  - Added floating Material 3 filter chips (`🍽️ Food POIs` and `⭐ My Saved`) at the top of the map allowing users to toggle POI overlays on or off on demand (enabled by default).
+  - Added floating "Search this area" prompt when panning the camera away from the initial search coordinate.
+- **Zero-Crash Resilience & Offline Graceful Degradation**:
+  - Network-gated and SDK-initialization-checked POI search with safe fallback to local Room SQLite saved places and custom pin placement when offline or when Mappls services are unreachable.
+
 ## [1.2.32] - 2026-11-12
 
 ### Fixed & Enhanced (Release Crash Hardening & Resource Preservation)

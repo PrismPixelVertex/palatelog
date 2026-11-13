@@ -246,6 +246,13 @@ fun QuickCaptureScreen(
                     onLocationConfirmed = { lat, lng ->
                         viewModel.onLocationPicked(lat, lng)
                         showMapPicker = false
+                    },
+                    onLocationConfirmedWithPlace = { lat, lng, placeName ->
+                        viewModel.onLocationPicked(lat, lng)
+                        if (!placeName.isNullOrBlank() && uiState.placeName.isBlank()) {
+                            viewModel.onPlaceNameChanged(placeName)
+                        }
+                        showMapPicker = false
                     }
                 )
             }

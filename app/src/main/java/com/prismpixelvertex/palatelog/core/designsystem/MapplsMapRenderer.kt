@@ -29,6 +29,8 @@ import com.mappls.sdk.maps.annotations.Marker
 import com.mappls.sdk.maps.annotations.MarkerOptions
 import com.mappls.sdk.maps.camera.CameraUpdateFactory
 import com.mappls.sdk.maps.geometry.LatLng
+import com.mappls.sdk.maps.style.layers.Property
+import com.mappls.sdk.maps.style.layers.PropertyFactory
 
 private const val TAG = "PalateLog_Mappls"
 
@@ -45,6 +47,7 @@ fun MapplsMapRenderer(
     zoomLevel: Double = 16.0,
     animationTrigger: Long = 0L,
     markers: List<PalateMapMarker> = emptyList(),
+    hideGenericPois: Boolean = false,
     onSingleTap: ((latitude: Double, longitude: Double) -> Unit)? = null,
     onLongPress: ((latitude: Double, longitude: Double) -> Unit)? = null,
     onMarkerClick: ((markerId: String) -> Unit)? = null,
@@ -141,6 +144,8 @@ fun MapplsMapRenderer(
                     }
                     true
                 }
+
+                applyPoiLayerVisibility(mapplsMap, hideGenericPois)
             }
 
             override fun onMapError(code: Int, message: String?) {
@@ -149,6 +154,12 @@ fun MapplsMapRenderer(
                 onInitializationFailed?.invoke()
             }
         })
+    }
+
+    // Toggle generic POI visibility when hideGenericPois changes
+    LaunchedEffect(mapplsMapInstance, hideGenericPois) {
+        val map = mapplsMapInstance ?: return@LaunchedEffect
+        applyPoiLayerVisibility(map, hideGenericPois)
     }
 
     // Animate camera smoothly when center coordinates, zoom level, or animationTrigger change
@@ -195,4 +206,23 @@ fun MapplsMapRenderer(
         factory = { mapView },
         modifier = modifier
     )
+}
+
+private fun applyPoiLayerVisibility(map: MapplsMap, hidePois: Boolean) {
+    try {
+        map.getStyle { style ->
+            for (layer in style.layers) {
+                val layerId = layer.id.lowercase()
+                if (layerId.contains("poi")) {
+                    layer.setProperties(
+                        PropertyFactory.visibility(
+                            if (hidePois) Property.NONE else Property.VISIBLE
+                        )
+                    )
+                }
+            }
+        }
+    } catch (e: Exception) {
+        Log.w(TAG, "Failed to apply POI layer visibility on Mappls style", e)
+    }
 }

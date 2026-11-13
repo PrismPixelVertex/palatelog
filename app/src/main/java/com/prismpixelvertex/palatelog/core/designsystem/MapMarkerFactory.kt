@@ -42,6 +42,12 @@ object MapMarkerFactory {
         }
     }
 
+    fun getPoiRestaurantMarker(context: Context): Drawable {
+        return markerCache.getOrPut("POI_RESTAURANT") {
+            createPoiRestaurantMarkerBitmap(context)
+        }
+    }
+
     private fun createRestaurantMarkerBitmap(
         context: Context,
         verdict: Verdict,
@@ -186,6 +192,54 @@ object MapMarkerFactory {
             style = Paint.Style.FILL
         }
         canvas.drawCircle(centerX, circleCenterY, 6f, innerDotPaint)
+
+        return bitmap.toDrawable(context.resources)
+    }
+
+    private fun createPoiRestaurantMarkerBitmap(context: Context): Drawable {
+        val width = 90
+        val height = 110
+        val bitmap = createBitmap(width, height)
+        val canvas = Canvas(bitmap)
+
+        val centerX = width / 2f
+        val circleRadius = 34f
+        val circleCenterY = 40f
+        val bottomTipY = 104f
+
+        val pinPath = Path().apply {
+            addCircle(centerX, circleCenterY, circleRadius, Path.Direction.CW)
+            moveTo(centerX - circleRadius + 4f, circleCenterY + circleRadius - 8f)
+            lineTo(centerX, bottomTipY)
+            lineTo(centerX + circleRadius - 4f, circleCenterY + circleRadius - 8f)
+            close()
+        }
+
+        // Distinct Sky Blue hue (#0284C7) for third-party POIs, distinct from user's Green/Red/Amber verdict pins
+        val fillPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = "#0284C7".toColorInt()
+            style = Paint.Style.FILL
+        }
+
+        val strokePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            color = Color.WHITE
+            style = Paint.Style.STROKE
+            strokeWidth = 5f
+        }
+
+        canvas.drawPath(pinPath, fillPaint)
+        canvas.drawPath(pinPath, strokePaint)
+
+        // Draw fork & knife restaurant icon tinted white inside the circle
+        val iconDrawable = ContextCompat.getDrawable(context, R.drawable.ic_marker_restaurant)
+        if (iconDrawable != null) {
+            val iconSize = 36
+            val left = (centerX - iconSize / 2).toInt()
+            val top = (circleCenterY - iconSize / 2).toInt()
+            iconDrawable.setBounds(left, top, left + iconSize, top + iconSize)
+            iconDrawable.setTint(Color.WHITE)
+            iconDrawable.draw(canvas)
+        }
 
         return bitmap.toDrawable(context.resources)
     }
