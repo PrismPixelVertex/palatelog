@@ -57,7 +57,8 @@ fun MapplsMapRenderer(
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
     val density = LocalDensity.current
-    val marginPx = remember(density) { with(density) { 16.dp.roundToPx() } }
+    val compassMarginTopPx = remember(density) { with(density) { 68.dp.roundToPx() } }
+    val compassMarginEndPx = remember(density) { with(density) { 12.dp.roundToPx() } }
 
     val currentOnSingleTap by rememberUpdatedState(onSingleTap)
     val currentOnLongPress by rememberUpdatedState(onLongPress)
@@ -69,8 +70,8 @@ fun MapplsMapRenderer(
 
     val mapView = remember {
         val options = MapplsMapOptions.createFromAttributes(context, null)
-            .compassGravity(Gravity.TOP or Gravity.START)
-            .compassMargins(intArrayOf(marginPx, marginPx, marginPx, marginPx))
+            .compassGravity(Gravity.TOP or Gravity.END)
+            .compassMargins(intArrayOf(0, compassMarginTopPx, compassMarginEndPx, 0))
         MapView(context, options).apply {
             onCreate(Bundle())
             post {
@@ -79,8 +80,8 @@ fun MapplsMapRenderer(
                         FrameLayout.LayoutParams.WRAP_CONTENT,
                         FrameLayout.LayoutParams.WRAP_CONTENT
                     )
-                    params.gravity = Gravity.TOP or Gravity.START
-                    params.setMargins(marginPx, marginPx, marginPx, marginPx)
+                    params.gravity = Gravity.TOP or Gravity.END
+                    params.setMargins(0, compassMarginTopPx, compassMarginEndPx, 0)
                     compass.layoutParams = params
                     compass.requestLayout()
                 }
@@ -111,8 +112,8 @@ fun MapplsMapRenderer(
             override fun onMapReady(mapplsMap: MapplsMap) {
                 mapplsMapInstance = mapplsMap
                 try {
-                    mapplsMap.uiSettings?.compassGravity = Gravity.TOP or Gravity.START
-                    mapplsMap.uiSettings?.setCompassMargins(marginPx, marginPx, marginPx, marginPx)
+                    mapplsMap.uiSettings?.compassGravity = Gravity.TOP or Gravity.END
+                    mapplsMap.uiSettings?.setCompassMargins(0, compassMarginTopPx, compassMarginEndPx, 0)
                 } catch (_: Exception) {}
                 mapView.post {
                     mapView.compassView?.let { compass ->
@@ -120,8 +121,8 @@ fun MapplsMapRenderer(
                             FrameLayout.LayoutParams.WRAP_CONTENT,
                             FrameLayout.LayoutParams.WRAP_CONTENT
                         )
-                        params.gravity = Gravity.TOP or Gravity.START
-                        params.setMargins(marginPx, marginPx, marginPx, marginPx)
+                        params.gravity = Gravity.TOP or Gravity.END
+                        params.setMargins(0, compassMarginTopPx, compassMarginEndPx, 0)
                         compass.layoutParams = params
                         compass.requestLayout()
                     }

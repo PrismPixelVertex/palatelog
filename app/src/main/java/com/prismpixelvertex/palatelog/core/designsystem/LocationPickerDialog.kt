@@ -74,6 +74,7 @@ import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
 import dagger.hilt.android.EntryPointAccessors
 import dagger.hilt.components.SingletonComponent
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.Locale
@@ -142,6 +143,7 @@ fun LocationPickerDialog(
     var isSearchingPois by remember { mutableStateOf(false) }
     var mapplsPois by remember { mutableStateOf<List<RestaurantPoi>>(emptyList()) }
     var lastSearchedCoords by remember { mutableStateOf<Pair<Double, Double>?>(null) }
+    var searchFailedOrEmpty by remember { mutableStateOf(false) }
 
     // Selected spot details for display banner and confirmation
     var selectedSpotName by remember { mutableStateOf<String?>(null) }
@@ -156,12 +158,13 @@ fun LocationPickerDialog(
             restaurantDao?.getAllRestaurants()?.collect { entities ->
                 value = entities.filter { it.latitude != 0.0 && it.longitude != 0.0 }
             }
+        } catch (_: CancellationException) {
+            // Normal coroutine cancellation when dialog is dismissed
         } catch (e: Exception) {
             Log.w(TAG, "Error collecting local restaurants", e)
         }
     }
 
-    // Initial search for restaurant POIs around initial coordinates
     // Initial search for restaurant POIs around initial coordinates
     LaunchedEffect(startLat, startLng, isNetworkAvailable) {
         if (isNetworkAvailable) {
@@ -169,6 +172,9 @@ fun LocationPickerDialog(
             val results = MapplsPoiSearchHelper.searchNearbyRestaurants(startLat, startLng, radiusMeters = 1500)
             if (results.isNotEmpty()) {
                 mapplsPois = results
+                searchFailedOrEmpty = false
+            } else {
+                searchFailedOrEmpty = true
             }
             lastSearchedCoords = Pair(startLat, startLng)
             isSearchingPois = false
@@ -187,6 +193,9 @@ fun LocationPickerDialog(
                 val newPois = MapplsPoiSearchHelper.searchNearbyRestaurants(cameraCenterLat, cameraCenterLng, radiusMeters = 1500)
                 if (newPois.isNotEmpty()) {
                     mapplsPois = (mapplsPois + newPois).distinctBy { it.id }
+                    searchFailedOrEmpty = false
+                } else {
+                    searchFailedOrEmpty = true
                 }
                 lastSearchedCoords = Pair(cameraCenterLat, cameraCenterLng)
                 isSearchingPois = false
@@ -453,7 +462,7 @@ fun LocationPickerDialog(
                         }
                     )
 
-                    // Floating Filter Chips at Top-Start (Food POIs toggle & Saved Restaurants toggle)
+                    // Floating Filter Chips at Top-Start (Saved Restaurants & Food POIs toggle)
                     Row(
                         modifier = Modifier
                             .align(Alignment.TopStart)
@@ -461,51 +470,6 @@ fun LocationPickerDialog(
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        FilterChip(
-                            selected = showPois,
-                            onClick = {
-                                val nextState = !showPois
-                                showPois = nextState
-                                if (nextState && mapplsPois.isEmpty() && isNetworkAvailable) {
-                                    coroutineScope.launch {
-                                        isSearchingPois = true
-                                        val newPois = MapplsPoiSearchHelper.searchNearbyRestaurants(cameraCenterLat, cameraCenterLng, 1500)
-                                        if (newPois.isNotEmpty()) {
-                                            mapplsPois = newPois
-                                        }
-                                        lastSearchedCoords = Pair(cameraCenterLat, cameraCenterLng)
-                                        isSearchingPois = false
-                                    }
-                                }
-                            },
-                            label = {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Text(
-                                        text = stringResource(R.string.location_picker_filter_food_pois),
-                                        style = MaterialTheme.typography.labelSmall
-                                    )
-                                    if (isSearchingPois) {
-                                        Spacer(modifier = Modifier.width(4.dp))
-                                        CircularProgressIndicator(
-                                            modifier = Modifier.size(10.dp),
-                                            strokeWidth = 1.5.dp
-                                        )
-                                    }
-                                }
-                            },
-                            leadingIcon = {
-                                Icon(
-                                    imageVector = Icons.Default.Restaurant,
-                                    contentDescription = null,
-                                    modifier = Modifier.size(14.dp)
-                                )
-                            },
-                            colors = FilterChipDefaults.filterChipColors(
-                                selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                                selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
-                            )
-                        )
-
                         if (localRestaurants.isNotEmpty()) {
                             FilterChip(
                                 selected = showLogged,
@@ -529,16 +493,59 @@ fun LocationPickerDialog(
                                 )
                             )
                         }
+
+                        FilterChip(
+                            selected = showPois,
+                            onClick = {
+                                val nextState = !showPois
+                                showPois = nextState
+                                if (nextState && mapplsPois.isEmpty() && isNetworkAvailable) {
+                                    coroutineScope.launch {
+                                        isSearchingPois = true
+                                        val newPois = MapplsPoiSearchHelper.searchNearbyRestaurants(cameraCenterLat, cameraCenterLng, 1500)
+                                        if (newPois.isNotEmpty()) {
+                                            mapplsPois = newPois
+                                            searchFailedOrEmpty = false
+                                        } else {
+                                            searchFailedOrEmpty = true
+                                        }
+                                        lastSearchedCoords = Pair(cameraCenterLat, cameraCenterLng)
+                                        isSearchingPois = false
+                                    }
+                                }
+                            },
+                            label = {
+                                Text(
+                                    text = stringResource(R.string.location_picker_filter_food_pois),
+                                    style = MaterialTheme.typography.labelSmall
+                                )
+                            },
+                            leadingIcon = {
+                                if (isSearchingPois) {
+                                    CircularProgressIndicator(
+                                        modifier = Modifier.size(14.dp),
+                                        strokeWidth = 1.75.dp,
+                                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                                    )
+                                } else {
+                                    Icon(
+                                        imageVector = Icons.Default.Restaurant,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(14.dp)
+                                    )
+                                }
+                            },
+                            colors = FilterChipDefaults.filterChipColors(
+                                selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                                selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        )
                     }
 
-                    // Floating "Search this area" prompt when camera moves away from last search
-                    val needsSearchHere = remember(cameraCenterLat, cameraCenterLng, lastSearchedCoords, showPois) {
-                        showPois && lastSearchedCoords?.let {
-                            GeoUtils.calculateDistanceKm(it.first, it.second, cameraCenterLat, cameraCenterLng) > 0.8
-                        } ?: false
-                    }
+                    // Floating "Search this area" prompt when search in the current area was empty or failed
+                    val shouldShowSearchAreaButton = showPois && searchFailedOrEmpty && !isSearchingPois
 
-                    if (needsSearchHere && !isSearchingPois && isNetworkAvailable) {
+                    if (shouldShowSearchAreaButton) {
                         Surface(
                             shape = RoundedCornerShape(16.dp),
                             color = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f),
@@ -552,6 +559,9 @@ fun LocationPickerDialog(
                                         val newPois = MapplsPoiSearchHelper.searchNearbyRestaurants(cameraCenterLat, cameraCenterLng, 1500)
                                         if (newPois.isNotEmpty()) {
                                             mapplsPois = (mapplsPois + newPois).distinctBy { it.id }
+                                            searchFailedOrEmpty = false
+                                        } else {
+                                            searchFailedOrEmpty = true
                                         }
                                         lastSearchedCoords = Pair(cameraCenterLat, cameraCenterLng)
                                         isSearchingPois = false

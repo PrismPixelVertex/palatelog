@@ -22,8 +22,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Enables 1-tap re-use of previously saved dining locations to prevent accidental duplicate entries.
 - **Restored Interactive Map Pin & Annotation Rendering**:
   - Removed base vector layer suppression in `MapplsMapRenderer` and `PalateInteractiveMap` that had inadvertently suppressed map annotation layers, guaranteeing that tapped custom location pins (`SELECTED_PIN`) and saved restaurant markers appear immediately on screen.
-  - Added floating Material 3 filter chips (`🍽️ Food POIs` and `⭐ My Saved`) at the top of the map allowing users to toggle POI overlays or saved places on and off on demand (enabled by default).
-  - Added floating "Search this area" prompt when panning the camera away from the initial search coordinate.
+  - Added floating Material 3 filter chips (`⭐ My Saved` as fixed anchor followed by `🍽️ Food POIs`) at the top of the map. Inlined the POI search loading indicator into the chip's leading icon slot, completely eliminating button width jumping and horizontal layout shift during map panning.
+  - Relocated the map north-south orientation compass to the top-right corner below the GPS FAB in `MapplsMapRenderer`, completely eliminating overlap with the `My Saved` and `Food POIs` filter chips on the top-left.
+  - Refined "Search this area" UX: auto-searches silently on pan without flashing; surfaces the floating retry pill only when an area search returns 0 results or fails (network timeout/throttling).
+  - Silenced benign `CancellationException` in `LocationPickerDialog` during dialog dismiss to prevent false-positive `Error collecting local restaurants` logcat warnings.
 - **Zero-Crash Resilience & Offline Graceful Degradation**:
   - Network-gated POI search with safe fallback to local Room SQLite saved places and custom pin placement when offline or when external POI services are unreachable.
 
