@@ -607,4 +607,37 @@
     <string name="action_retry">Retry</string>
     <string name="action_ignore">Ignore</string>
     <string name="action_settings">Settings</string>
+
+    <!-- What's New Upgrade Showcase -->
+    <string name="whats_new_title">What\'s New in PalateLog 🍽️</string>
+    <string name="whats_new_action_got_it">Got It</string>
+    <string name="whats_new_action_explore_guide">Explore Guide</string>
+    <string name="whats_new_1_2_34_subtitle">Version 1.2.34 • Map Overlays &amp; Past Dishes</string>
+    <string name="whats_new_feature_poi_title">Nearby Food POIs &amp; Overlays</string>
+    <string name="whats_new_feature_poi_desc">Discover dining spots directly on the map with collision-free name badges that scale smoothly with zoom.</string>
+    <string name="whats_new_feature_saved_title">Saved Places &amp; Past Dishes</string>
+    <string name="whats_new_feature_saved_desc">Saved restaurants feature an embossed star badge. Selecting one instantly re-loads past dishes for 1-tap re-logging.</string>
+    <string name="whats_new_feature_precision_title">Precision Pin Placement</string>
+    <string name="whats_new_feature_precision_desc">Zoom in close to drop custom pins anywhere without magnetic snapping, or tap ✕ to unhook any latched venue.</string>
+
+    <!-- In-Map Quick Help Dialog -->
+    <string name="location_picker_help_title">Map &amp; Marker Guide</string>
+    <string name="location_picker_help_food_poi">🍽️ Food POIs: Sky blue pins indicating nearby restaurants discovered via map search.</string>
+    <string name="location_picker_help_saved">⭐ My Saved: Restaurants you\'ve previously logged with color-coded verdicts (Green/Red/Amber).</string>
+    <string name="location_picker_help_custom">📍 Custom Pin: Tap anywhere at street-level zoom (≥ 16.8) to place an exact custom location pin.</string>
+    <string name="location_picker_help_gestures">💡 Tips: Pan to auto-search new areas; tap ✕ on the bottom card to convert any venue back into a custom pin.</string>
+
+    <!-- Expanded HelpGuide Map Strings -->
+    <string name="help_map_layers_title">Map Marker Types &amp; Visual Indicators</string>
+    <string name="help_map_saved_layer">⭐ My Saved Places: Embossed gold star badge displaying your historical dining verdict (Green for Go, Red for No-Go, Amber for Caution). Selecting one in the picker automatically loads your remembered past dishes!</string>
+    <string name="help_map_poi_layer">🍽️ Food POIs: Sky-blue bubble pins with cutlery icons representing nearby restaurants discovered from map data. Tap any POI to adopt its name and address.</string>
+    <string name="help_map_custom_pin">📍 Custom Picked Spot: Gold pin marking your exact chosen coordinate when dropping a pin manually.</string>
+    <string name="help_map_filters_title">Filter Chips &amp; Controls</string>
+    <string name="help_map_filter_saved">⭐ My Saved: Toggle your personal dining history pins on or off.</string>
+    <string name="help_map_filter_pois">🍽️ Food POIs: Toggle third-party restaurant search pins on or off.</string>
+    <string name="help_map_gestures_title">Precision Taps &amp; Anti-Clutter Rules</string>
+    <string name="help_map_gesture_zoom">Dynamic Zoom Separation: Restaurant name labels spread apart and appear cleanly as you zoom in without visual clutter.</string>
+    <string name="help_map_gesture_precision">High-Zoom Precision: When zoomed in (zoom ≥ 16.8), tapping the ground drops a custom pin at your exact tap location without snapping to nearby restaurants.</string>
+    <string name="help_map_gesture_unhook">1-Tap Unlink: If a pin latches onto a POI, tap the ✕ button on the details card to immediately convert it back to a free custom pin.</string>
+    <string name="help_map_gesture_pan">Pan &amp; Auto-Search: Panning over 800m triggers a silent background search. If an area has no results or throttles, tap \'Search this area\' to retry.</string>
 </resources>

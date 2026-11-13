@@ -87,7 +87,15 @@ Based on the gap analysis, here are the completed phases and recommended next st
     - Precision ground tap latching (`0.0m` threshold at zoom >= 16.8) and 1-tap spot card unhook (`✕`).
     - Seamless saved restaurant binding in `EntryEditorScreen`: 1-tap selection triggers "Edit Visit Log" and loads "Past Dishes Remembered" from Room SQLite.
 
-#### Phase 3D: Travel Corridor Search & Planning
-15. **Highway Route Corridor Search**:
+### Phase 3D: Extensible Upgrade Showcase Framework & Contextual Help Integration (Completed in v1.2.34 ✅)
+15. **Version Upgrade Feature Showcase & In-Situ Guide Deep-Linking**:
+    - Centralized `WhatsNewRegistry` mapping version codes to highlight features and optional `HelpTopicKey`.
+    - Automated upgrade detection via `DashboardViewModel` with clean onboarding isolation (fresh installs initialize current version code silently).
+    - Dynamic guide redirection: "Explore Guide" button renders only when a topic key is configured.
+    - In-map quick help `?` icon button in `LocationPickerDialog` displaying pin types and gesture rules.
+    - Deepened `MAP_EXPLORE` topic in `HelpGuideScreen` covering saved pins, POIs, zoom separation, precision taps, and past dish re-logging.
+
+#### Phase 3E: Travel Corridor Search & Planning
+16. **Highway Route Corridor Search**:
     - Allow entering an Origin and Destination (e.g. Bangalore to Chennai) to query all logged stops within 5-10 km along that highway corridor.
 

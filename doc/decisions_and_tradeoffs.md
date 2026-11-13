@@ -301,4 +301,28 @@ When logging a dining experience in [`LocationPickerDialog`](../app/src/main/jav
   - **Zero Duplicates**: Guarantees database integrity by preventing accidental duplicate restaurant entities.
 * **Trade-off**: Requires network access for third-party POI discovery (gracefully degrades to local Room SQLite saved places when offline).
 
+## ADR 015: Extensible Upgrade Feature Showcase Framework & In-Situ Guide Deep-Linking (v1.2.34)
+
+### Context
+When releasing impactful features (such as map POI overlays, precision zoom taps, and past dishes re-logging), existing users who update via Google Play Store had no in-app visibility into newly unlocked capabilities unless they manually browsed the full Help Guide. However, hardcoding upgrade dialogs risks cluttering minor bugfix releases and disrupting first-time onboarding.
+
+### Options Considered
+* **Option A: Static "What's New" screen on every app launch**: Intrusive, annoying to users, and causes prompt fatigue.
+* **Option B: Web-based release notes / In-app browser changelog**: Disconnected from app context, breaks offline capabilities, and does not allow deep-linking into specific in-app help topics.
+* **Option C: Centralized Version-Aware `WhatsNewRegistry` with Optional Guide Redirection (Selected)**:
+  - **Declarative Registry (`WhatsNewRegistry`)**: Models each showcase as a `WhatsNewRelease` containing `versionCode`, `versionName`, list of `WhatsNewFeature`, and an optional `HelpTopicKey?`.
+  - **Automated First-Launch & Upgrade Isolation**:
+    - **Fresh Installs**: When `hasSeenFirstLaunchHelp == false`, `last_seen_whats_new_version` is initialized silently to `BuildConfig.VERSION_CODE`, ensuring new users only see the onboarding walkthrough without modal conflict.
+    - **Upgraded Users**: When `hasSeenFirstLaunchHelp == true` and `lastSeenVersion < BuildConfig.VERSION_CODE`, the app queries the registry. If a release showcase is registered, `WhatsNewDialog` is triggered once; if none is defined (minor patch), the version pointer advances silently.
+  - **Conditional Guide Redirection**: If `helpTopicKey` is configured, the dialog renders both "Got It" and "Explore Guide", navigating directly to that topic. If `helpTopicKey == null`, the "Explore Guide" button is omitted automatically.
+  - **In-Situ In-Map Help**: Adds a `?` icon button directly in `LocationPickerDialog`'s header row, rendering a quick-reference guide explaining marker types, filter chips, and precision gestures right when users need them.
+
+### Decision & Trade-offs
+* **Benefits**:
+  - **Extensible & Standardized**: New releases can be registered in seconds via a single data entry in `WhatsNewRegistry` (standardized as Rule 8 in `GEMINI.md`).
+  - **No Prompt Clutter**: Silently skips minor maintenance patches that do not register a showcase.
+  - **Zero First-Launch Conflict**: Onboarding and upgrade dialogs never collide.
+* **Trade-off**: Requires maintaining `WhatsNewRegistry` entries alongside `CHANGELOG.md` when cutting major/minor releases.
+
+
 

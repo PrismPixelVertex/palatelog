@@ -5,6 +5,18 @@ All notable changes to PalateLog will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.34] - 2026-11-13
+
+### Added & Enhanced (What's New Upgrade Showcase & Interactive Map Guide)
+- **Extensible "What's New" Upgrade Showcase Framework (`WhatsNewRegistry`)**:
+  - Implemented a data-driven, version-aware release registry (`WhatsNewRegistry`, `WhatsNewRelease`, `WhatsNewFeature`) that detects app updates on first launch by comparing `last_seen_version_code` against `BuildConfig.VERSION_CODE`.
+  - Intelligently bypasses dialog display for fresh installs (which see the first-launch onboarding tour) and silent patch updates that contain no new user-facing features (`getReleaseForVersion() == null`).
+  - Configurable guide redirection: releases can optionally specify a target `HelpTopicKey` (e.g., `HelpTopicKey.MAP_EXPLORE`), dynamically displaying an "Explore Guide" secondary action or showing a single "Got It" action when guide redirection is unneeded.
+- **Comprehensive Interactive Map & POI Guidebook (`HelpGuideScreen`)**:
+  - Deeply expanded the `MAP_EXPLORE` topic in `HelpGuideScreen` to thoroughly document the dual-layer map markers (emboossed `⭐ My Saved` vs Sky Blue `🍽️ Food POIs`), zoom-adaptive collision-free name pills, high-zoom ground tap zero-latching for custom pin placement, 1-tap card unhook (`✕`), and seamless past dishes remembered loading.
+- **In-Map Contextual Quick Help (`LocationPickerDialog`)**:
+  - Added a dedicated `?` help button in the map picker dialog header, offering instant in-situ guidance on map symbols, filter chips, and gestures without navigating away.
+
 ## [1.2.33] - 2026-11-13
 
 ### Added & Enhanced (Restaurant POI Overlays & Picker Resiliency)

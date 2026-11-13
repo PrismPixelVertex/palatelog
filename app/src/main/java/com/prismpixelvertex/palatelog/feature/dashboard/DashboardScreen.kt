@@ -103,6 +103,7 @@ import com.prismpixelvertex.palatelog.core.designsystem.VerdictGoGreen
 import com.prismpixelvertex.palatelog.core.designsystem.VerdictNoGoRed
 import com.prismpixelvertex.palatelog.core.location.GeoUtils
 import com.prismpixelvertex.palatelog.core.navigation.ExternalMapNavigator
+import com.prismpixelvertex.palatelog.core.whatsnew.WhatsNewDialog
 import com.prismpixelvertex.palatelog.feature.help.HelpTopicKey
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -293,6 +294,15 @@ fun DashboardScreen(
                     }
                 },
                 shape = RoundedCornerShape(Dimens.RadiusDialog)
+            )
+        } else if (uiState.whatsNewRelease != null) {
+            WhatsNewDialog(
+                release = uiState.whatsNewRelease!!,
+                onDismiss = { viewModel.onDismissWhatsNew() },
+                onExploreGuide = { helpTopic ->
+                    viewModel.onDismissWhatsNew()
+                    onNavigateToHelpGuide(helpTopic)
+                }
             )
         }
 

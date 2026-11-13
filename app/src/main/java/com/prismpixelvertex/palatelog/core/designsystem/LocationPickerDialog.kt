@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.HelpOutline
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.CloudOff
@@ -26,6 +27,7 @@ import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.MyLocation
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Restaurant
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -141,6 +143,7 @@ fun LocationPickerDialog(
     // POI & Saved Restaurant Layer Controls
     var showPois by remember { mutableStateOf(true) }
     var showLogged by remember { mutableStateOf(true) }
+    var showHelpDialog by remember { mutableStateOf(false) }
     var isSearchingPois by remember { mutableStateOf(false) }
     var mapplsPois by remember { mutableStateOf<List<RestaurantPoi>>(emptyList()) }
     var lastSearchedCoords by remember { mutableStateOf<Pair<Double, Double>?>(null) }
@@ -324,7 +327,10 @@ fun LocationPickerDialog(
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
+                    Row(
+                        modifier = Modifier.weight(1f),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
                         Icon(
                             imageVector = Icons.Default.LocationOn,
                             contentDescription = null,
@@ -346,8 +352,18 @@ fun LocationPickerDialog(
                         }
                     }
 
-                    IconButton(onClick = onDismiss, modifier = Modifier.size(28.dp)) {
-                        Icon(Icons.Default.Close, contentDescription = stringResource(R.string.action_close))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        IconButton(onClick = { showHelpDialog = true }, modifier = Modifier.size(28.dp)) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.HelpOutline,
+                                contentDescription = stringResource(R.string.help_title),
+                                tint = AmberPrimary
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(4.dp))
+                        IconButton(onClick = onDismiss, modifier = Modifier.size(28.dp)) {
+                            Icon(Icons.Default.Close, contentDescription = stringResource(R.string.action_close))
+                        }
                     }
                 }
 
@@ -816,5 +832,61 @@ fun LocationPickerDialog(
                 }
             }
         }
+    }
+
+    if (showHelpDialog) {
+        AlertDialog(
+            onDismissRequest = { showHelpDialog = false },
+            icon = {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.HelpOutline,
+                    contentDescription = null,
+                    tint = AmberPrimary,
+                    modifier = Modifier.size(Dimens.IconSizeLarge)
+                )
+            },
+            title = {
+                Text(
+                    text = stringResource(R.string.location_picker_help_title),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(
+                        text = stringResource(R.string.location_picker_help_saved),
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    Text(
+                        text = stringResource(R.string.location_picker_help_food_poi),
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    Text(
+                        text = stringResource(R.string.location_picker_help_custom),
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                    Text(
+                        text = stringResource(R.string.location_picker_help_gestures),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = { showHelpDialog = false },
+                    colors = ButtonDefaults.buttonColors(containerColor = AmberPrimary),
+                    shape = RoundedCornerShape(Dimens.RadiusMedium)
+                ) {
+                    Text(
+                        text = stringResource(R.string.whats_new_action_got_it),
+                        color = MaterialTheme.colorScheme.onPrimary,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            },
+            shape = RoundedCornerShape(Dimens.RadiusDialog)
+        )
     }
 }
