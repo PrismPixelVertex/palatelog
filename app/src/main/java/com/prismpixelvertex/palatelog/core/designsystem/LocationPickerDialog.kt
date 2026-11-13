@@ -191,10 +191,15 @@ fun LocationPickerDialog(
                 }
             }
 
-            // 2. Mappls Food POIs (distinct Sky Blue pin)
+            // 2. Food POIs (distinct Sky Blue bubble with short name overlay on nearest spots)
             if (showPois) {
-                val poiIcon = MapMarkerFactory.getPoiRestaurantMarker(context)
-                mapplsPois.forEach { poi ->
+                // To avoid visual clutter, render short name overlay on the top 7 closest POIs
+                mapplsPois.forEachIndexed { index, poi ->
+                    val showNamePill = index < 7
+                    val poiIcon = MapMarkerFactory.getPoiRestaurantMarker(
+                        context = context,
+                        shortLabel = if (showNamePill) poi.name else null
+                    )
                     add(
                         PalateMapMarker(
                             id = "POI_${poi.id}",

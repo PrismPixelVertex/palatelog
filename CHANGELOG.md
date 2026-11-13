@@ -11,11 +11,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Automatic Restaurant POI Overlays with OSM Fallback (`LocationPickerDialog`)**:
   - Integrated Mappls Nearby Search API using category code `DINFOD` (Restaurants & Dining) via `MapplsPoiSearchHelper`, coupled with an automatic OpenStreetMap (Nominatim) fallback (`amenity=restaurant`) to reliably surface nearby dining establishments even when Mappls Atlas REST API credentials are unconfigured or unavailable.
   - Added support for configuring `mapplsRestKey` via `keystore.properties` into `BuildConfig.MAPPLS_REST_KEY` for seamless Mappls Atlas REST API authentication.
-  - Rendered dedicated Sky Blue (`#0284C7`) fork-and-knife restaurant POI pins distinct from user-logged restaurants and custom pin markers.
+  - Rendered dedicated Sky Blue (`#0284C7`) circular map bubble POI pins with floating short name capsule pills directly over the top 7 nearest dining establishments, eliminating visual clutter while giving immediate on-map place awareness.
   - Tapping any restaurant POI pin instantly snaps the coordinates and displays a detailed place information card with place name and address.
   - Automatically populates the restaurant name into `EntryEditorScreen` and `QuickCaptureScreen` when confirmed if the user has not yet entered a name.
 - **Differentiated User-Logged Restaurants vs Third-Party POIs**:
-  - Displayed all user-registered restaurants from the local Room SQLite database (`RestaurantDao`) within the picker map without arbitrary distance cutoffs, color-coded by their PalateLog verdict (Emerald Green for `GO`, Crimson Red for `NO_GO`, Amber Yellow for `CAUTION`).
+  - Displayed all user-registered restaurants from the local Room SQLite database (`RestaurantDao`) with an embossed gold Star badge (`⭐`) on the pin shoulder, making personal saved spots instantly distinguishable from third-party map POIs.
+  - Color-coded by verdict (Emerald Green for `GO`, Crimson Red for `NO_GO`, Amber Yellow for `CAUTION`) with no distance restrictions.
   - Enables 1-tap re-use of previously saved dining locations to prevent accidental duplicate entries.
 - **Restored Interactive Map Pin & Annotation Rendering**:
   - Removed base vector layer suppression in `MapplsMapRenderer` and `PalateInteractiveMap` that had inadvertently suppressed map annotation layers, guaranteeing that tapped custom location pins (`SELECTED_PIN`) and saved restaurant markers appear immediately on screen.
