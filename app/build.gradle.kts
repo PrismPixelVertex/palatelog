@@ -76,6 +76,9 @@ configure<com.android.build.api.dsl.ApplicationExtension> {
         vectorDrawables {
             useSupportLibrary = true
         }
+
+        val mapplsRestKey = keystoreProperties.getProperty("mapplsRestKey") ?: ""
+        buildConfigField("String", "MAPPLS_REST_KEY", "\"$mapplsRestKey\"")
     }
 
     testOptions {

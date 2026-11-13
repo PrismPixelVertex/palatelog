@@ -35,6 +35,10 @@ class PalateLogApp : Application(), Configuration.Provider {
 
         try {
             com.mappls.sdk.maps.Mappls.getInstance(this)
+            if (BuildConfig.MAPPLS_REST_KEY.isNotBlank()) {
+                com.mappls.sdk.maps.Mappls.setApiKey(BuildConfig.MAPPLS_REST_KEY)
+                Log.d(TAG, "Configured Mappls REST API key")
+            }
             Log.d(TAG, "Mappls SDK initialized successfully")
             com.prismpixelvertex.palatelog.core.designsystem.MapProviderConfig.notifyMapplsInitialized(true)
         } catch (e: Exception) {

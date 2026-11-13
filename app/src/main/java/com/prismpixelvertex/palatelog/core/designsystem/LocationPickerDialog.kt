@@ -153,9 +153,9 @@ fun LocationPickerDialog(
         }
     }
 
-    // Initial search for Mappls restaurant POIs around initial coordinates
+    // Initial search for restaurant POIs around initial coordinates
     LaunchedEffect(startLat, startLng, isNetworkAvailable) {
-        if (isNetworkAvailable && MapProviderConfig.isMapplsInitialized) {
+        if (isNetworkAvailable) {
             isSearchingPois = true
             mapplsPois = MapplsPoiSearchHelper.searchNearbyRestaurants(startLat, startLng, radiusMeters = 1500)
             lastSearchedCoords = Pair(startLat, startLng)
@@ -166,19 +166,16 @@ fun LocationPickerDialog(
     val defaultSpotTitle = stringResource(R.string.restaurant_detail_selected_spot_default)
     val defaultSpotSnippet = stringResource(R.string.map_tap_actions_sub)
 
-    // Build consolidated marker list (Saved + Mappls POIs + Selected Pin)
+    // Build consolidated marker list (Saved + Food POIs + Selected Pin)
     val markers = remember(
         selectedLat, selectedLng, selectedSpotName, selectedSpotSnippet,
-        showPois, mapplsPois, showLogged, localRestaurants, centerLat, centerLng,
+        showPois, mapplsPois, showLogged, localRestaurants,
         defaultSpotTitle, defaultSpotSnippet
     ) {
         buildList {
             // 1. User-logged restaurants from local DB (colored by verdict: Green, Red, Amber)
             if (showLogged) {
-                val nearbySaved = localRestaurants.filter { rest ->
-                    GeoUtils.calculateDistanceKm(centerLat, centerLng, rest.latitude, rest.longitude) <= 15.0
-                }
-                nearbySaved.forEach { rest ->
+                localRestaurants.forEach { rest ->
                     val verdict = try { Verdict.valueOf(rest.overallVerdict) } catch (_: Exception) { Verdict.GO }
                     val type = try { RestaurantType.valueOf(rest.restaurantType) } catch (_: Exception) { RestaurantType.DINE_IN }
                     add(
@@ -290,7 +287,6 @@ fun LocationPickerDialog(
                         zoomLevel = 16.0,
                         animationTrigger = animationTrigger,
                         markers = markers,
-                        hideGenericPois = true,
                         onSingleTap = { lat, lng ->
                             selectedLat = lat
                             selectedLng = lng
