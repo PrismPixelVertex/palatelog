@@ -781,6 +781,7 @@ private fun MapExploreTopicContent() {
             style = MaterialTheme.typography.bodyMedium
         )
 
+        // Color-Coded Travel Markers
         Column(
             modifier = Modifier
                 .fillMaxWidth()
@@ -794,6 +795,51 @@ private fun MapExploreTopicContent() {
             Text(stringResource(R.string.help_map_pin_red), style = MaterialTheme.typography.bodySmall)
             Text(stringResource(R.string.help_map_pin_amber), style = MaterialTheme.typography.bodySmall)
             Text(stringResource(R.string.help_map_nav_point), style = MaterialTheme.typography.bodySmall)
+        }
+
+        // Map Marker Types & Visual Indicators
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(Dimens.RadiusMedium))
+                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                .padding(Dimens.SpacingStandard),
+            verticalArrangement = Arrangement.spacedBy(Dimens.SpacingMedium)
+        ) {
+            Text(stringResource(R.string.help_map_layers_title), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelLarge)
+            Text(stringResource(R.string.help_map_saved_layer), style = MaterialTheme.typography.bodySmall)
+            Text(stringResource(R.string.help_map_poi_layer), style = MaterialTheme.typography.bodySmall)
+            Text(stringResource(R.string.help_map_custom_pin), style = MaterialTheme.typography.bodySmall)
+        }
+
+        // Filter Chips & Controls
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(Dimens.RadiusMedium))
+                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                .padding(Dimens.SpacingStandard),
+            verticalArrangement = Arrangement.spacedBy(Dimens.SpacingMedium)
+        ) {
+            Text(stringResource(R.string.help_map_filters_title), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelLarge)
+            Text(stringResource(R.string.help_map_filter_saved), style = MaterialTheme.typography.bodySmall)
+            Text(stringResource(R.string.help_map_filter_pois), style = MaterialTheme.typography.bodySmall)
+        }
+
+        // Precision Taps & Anti-Clutter Rules
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(Dimens.RadiusMedium))
+                .background(MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                .padding(Dimens.SpacingStandard),
+            verticalArrangement = Arrangement.spacedBy(Dimens.SpacingMedium)
+        ) {
+            Text(stringResource(R.string.help_map_gestures_title), fontWeight = FontWeight.Bold, style = MaterialTheme.typography.labelLarge)
+            Text(stringResource(R.string.help_map_gesture_zoom), style = MaterialTheme.typography.bodySmall)
+            Text(stringResource(R.string.help_map_gesture_precision), style = MaterialTheme.typography.bodySmall)
+            Text(stringResource(R.string.help_map_gesture_unhook), style = MaterialTheme.typography.bodySmall)
+            Text(stringResource(R.string.help_map_gesture_pan), style = MaterialTheme.typography.bodySmall)
         }
     }
 }

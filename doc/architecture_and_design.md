@@ -441,5 +441,29 @@ sequenceDiagram
 
 For complete Google Play Store declarations, policy justifications, in-app prominent disclosure copy, and reviewer video scripts, see [play_store_location_policy_justification.md](play_store_location_policy_justification.md).
 
+---
+
+## 8. What's New Upgrade Showcase Framework & Help Topic Redirection (v1.2.34)
+
+To bridge the gap between major releases and user awareness, PalateLog introduces a declarative, extensible upgrade showcase framework that highlights new capabilities upon app updates:
+
+### A. Core Architecture & Models
+1. **`WhatsNewRegistry`**:
+   - Central singleton registry maintaining version-indexed `WhatsNewRelease` descriptors.
+   - Each release encapsulates a `versionCode`, `versionName`, string resource titles, a list of `WhatsNewFeature` items (icon, title, description), and an optional `helpTopicKey: HelpTopicKey?`.
+2. **Conditional Redirection Contract**:
+   - If `helpTopicKey` is configured (e.g. `HelpTopicKey.MAP_EXPLORE`), [`WhatsNewDialog`](../app/src/main/java/com/prismpixelvertex/palatelog/core/whatsnew/WhatsNewDialog.kt) renders both **"Got It"** (dismiss) and **"Explore Guide"** (deep-links directly to the expanded guide topic in [`HelpGuideScreen`](../app/src/main/java/com/prismpixelvertex/palatelog/feature/help/HelpGuideScreen.kt)).
+   - If `helpTopicKey == null`, the "Explore Guide" button is automatically suppressed.
+
+### B. Upgrade Detection & First-Launch Isolation
+[`DashboardViewModel`](../app/src/main/java/com/prismpixelvertex/palatelog/feature/dashboard/DashboardViewModel.kt) orchestrates non-conflicting dialog presentations:
+- **Fresh Installs (`hasSeenFirstLaunchHelp == false`)**: Initializes `last_seen_whats_new_version` immediately to `BuildConfig.VERSION_CODE`. The user is presented only with the first-launch onboarding walkthrough.
+- **Upgraded Users (`hasSeenFirstLaunchHelp == true`)**: If `lastSeenVersion < BuildConfig.VERSION_CODE`, the view model looks up the registered release for `BuildConfig.VERSION_CODE`. If found, `WhatsNewDialog` is presented once; if `null` (routine bugfix release), the version pointer advances silently with zero prompts.
+
+### C. In-Situ Quick Help & Expanded Map Documentation
+- **In-Map Quick Help Button (`?`)**: Added to [`LocationPickerDialog`](../app/src/main/java/com/prismpixelvertex/palatelog/core/designsystem/LocationPickerDialog.kt) header, rendering a compact dialog outlining pin categories (`⭐ My Saved`, `🍽️ Food POIs`, `📍 Custom Pin`) and gesture mechanics.
+- **Expanded Map Guide Topic**: Deepened `MAP_EXPLORE` in [`HelpGuideScreen`](../app/src/main/java/com/prismpixelvertex/palatelog/feature/help/HelpGuideScreen.kt) with dedicated sections for color-coded travel markers, marker types, filter chips, dynamic zoom separation, precision taps (>= 16.8 zoom), and past dish re-logging.
+
+
 
 

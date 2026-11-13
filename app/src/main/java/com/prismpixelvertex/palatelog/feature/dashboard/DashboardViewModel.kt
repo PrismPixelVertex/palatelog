@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.core.content.edit
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.prismpixelvertex.palatelog.BuildConfig
 import com.prismpixelvertex.palatelog.core.database.DishFeedbackDao
 import com.prismpixelvertex.palatelog.core.database.DishFeedbackEntity
 import com.prismpixelvertex.palatelog.core.database.RestaurantDao
@@ -16,6 +17,8 @@ import com.prismpixelvertex.palatelog.core.model.DishFeedback
 import com.prismpixelvertex.palatelog.core.model.DishVerdict
 import com.prismpixelvertex.palatelog.core.model.Restaurant
 import com.prismpixelvertex.palatelog.core.model.Verdict
+import com.prismpixelvertex.palatelog.core.whatsnew.WhatsNewRegistry
+import com.prismpixelvertex.palatelog.core.whatsnew.WhatsNewRelease
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -60,7 +63,8 @@ data class DashboardUiState(
     val isLocationLoading: Boolean = true,
     val isSortedByDistance: Boolean = false,
     val isNearbyFallbackActive: Boolean = false,
-    val showFirstLaunchHelpDialog: Boolean = false
+    val showFirstLaunchHelpDialog: Boolean = false,
+    val whatsNewRelease: WhatsNewRelease? = null
 )
 
 @HiltViewModel
@@ -75,6 +79,7 @@ class DashboardViewModel @Inject constructor(
     companion object {
         private const val PREFS_NAME = "palatelog_prefs"
         private const val KEY_FIRST_LAUNCH_HELP = "has_seen_first_launch_help"
+        private const val KEY_LAST_SEEN_WHATS_NEW_VERSION = "last_seen_whats_new_version"
         private const val LOCATION_CACHE_EXPIRY_MS = 5 * 60 * 1000L // 5 minutes location cache expiry
         private const val SIGNIFICANT_DISTANCE_SHIFT_KM = 0.05 // 50 meters shift threshold for list re-sorting
     }
@@ -86,9 +91,31 @@ class DashboardViewModel @Inject constructor(
     private val _selectedFilter = MutableStateFlow(DashboardFilter.ALL)
     private val _userLocation = MutableStateFlow<Pair<Double, Double>?>(null)
     private val _isLocationLoading = MutableStateFlow(true)
-    private val _showFirstLaunchHelpDialog = MutableStateFlow(
-        !context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-            .getBoolean(KEY_FIRST_LAUNCH_HELP, false)
+    private val hasSeenFirstLaunchHelp = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        .getBoolean(KEY_FIRST_LAUNCH_HELP, false)
+    private val _showFirstLaunchHelpDialog = MutableStateFlow(!hasSeenFirstLaunchHelp)
+    private val _whatsNewRelease = MutableStateFlow<WhatsNewRelease?>(
+        if (!hasSeenFirstLaunchHelp) {
+            // Fresh install: mark current version as seen so What's New doesn't clash with onboarding
+            context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit {
+                putInt(KEY_LAST_SEEN_WHATS_NEW_VERSION, BuildConfig.VERSION_CODE)
+            }
+            null
+        } else {
+            val lastSeenVersion = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+                .getInt(KEY_LAST_SEEN_WHATS_NEW_VERSION, 0)
+            if (lastSeenVersion < BuildConfig.VERSION_CODE) {
+                val release = WhatsNewRegistry.getReleaseForVersion(BuildConfig.VERSION_CODE)
+                if (release == null) {
+                    context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE).edit {
+                        putInt(KEY_LAST_SEEN_WHATS_NEW_VERSION, BuildConfig.VERSION_CODE)
+                    }
+                }
+                release
+            } else {
+                null
+            }
+        }
     )
 
     val uiState: StateFlow<DashboardUiState> = combine(
@@ -99,7 +126,8 @@ class DashboardViewModel @Inject constructor(
         _selectedFilter,
         _userLocation,
         _isLocationLoading,
-        _showFirstLaunchHelpDialog
+        _showFirstLaunchHelpDialog,
+        _whatsNewRelease
     ) { flows ->
         @Suppress("UNCHECKED_CAST")
         val restaurantEntities = flows[0] as List<RestaurantEntity>
@@ -113,6 +141,7 @@ class DashboardViewModel @Inject constructor(
         val location = flows[5] as Pair<Double, Double>?
         val isLocLoading = flows[6] as Boolean
         val showHelpDialog = flows[7] as Boolean
+        val whatsNew = flows[8] as WhatsNewRelease?
 
         val domainRestaurants = restaurantEntities.map { it.toDomain() }
         val domainDishes = dishEntities.map { it.toDomain() }
@@ -258,7 +287,8 @@ class DashboardViewModel @Inject constructor(
             isLocationLoading = isLocLoading,
             isSortedByDistance = location != null,
             isNearbyFallbackActive = nearbyFallbackActive,
-            showFirstLaunchHelpDialog = showHelpDialog
+            showFirstLaunchHelpDialog = showHelpDialog,
+            whatsNewRelease = whatsNew
         )
     }.stateIn(
         scope = viewModelScope,
@@ -273,6 +303,11 @@ class DashboardViewModel @Inject constructor(
     fun onDismissFirstLaunchHelp() {
         prefs.edit { putBoolean(KEY_FIRST_LAUNCH_HELP, true) }
         _showFirstLaunchHelpDialog.value = false
+    }
+
+    fun onDismissWhatsNew() {
+        prefs.edit { putInt(KEY_LAST_SEEN_WHATS_NEW_VERSION, BuildConfig.VERSION_CODE) }
+        _whatsNewRelease.value = null
     }
 
     fun onAcceptFirstLaunchHelp() {
