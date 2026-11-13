@@ -218,9 +218,7 @@ fun LocationPickerDialog(
             // 1. User-logged restaurants from local DB (colored by verdict: Green, Red, Amber)
             if (showLogged) {
                 localRestaurants.forEach { rest ->
-                    val isCurrentlySelected = (selectedLoggedId != null && rest.id == selectedLoggedId) ||
-                            (selectedSpotType == SelectedSpotType.LOGGED_RESTAURANT &&
-                                    GeoUtils.calculateDistanceKm(selectedLat, selectedLng, rest.latitude, rest.longitude) < 0.015)
+                    val isCurrentlySelected = selectedLoggedId != null && rest.id == selectedLoggedId
                     // Omit duplicate unselected marker at the exact selected coordinate to prevent z-fighting
                     if (!isCurrentlySelected) {
                         val verdict = try { Verdict.valueOf(rest.overallVerdict) } catch (_: Exception) { Verdict.GO }
@@ -256,9 +254,7 @@ fun LocationPickerDialog(
                 val labeledLocations = mutableListOf<Pair<Double, Double>>()
 
                 prioritizedPois.forEach { poi ->
-                    val isCurrentlySelected = (selectedPoiId != null && poi.id == selectedPoiId) ||
-                            (selectedSpotType == SelectedSpotType.MAPPLS_POI &&
-                                    GeoUtils.calculateDistanceKm(selectedLat, selectedLng, poi.latitude, poi.longitude) < 0.015)
+                    val isCurrentlySelected = selectedPoiId != null && poi.id == selectedPoiId
 
                     // Omit duplicate unselected POI marker at the exact selected coordinate to prevent z-fighting
                     if (!isCurrentlySelected) {
@@ -371,16 +367,28 @@ fun LocationPickerDialog(
                         animationTrigger = animationTrigger,
                         markers = markers,
                         onSingleTap = { lat, lng ->
-                            val nearbyLogged = if (showLogged) {
+                            // Dynamic zoom-scaled touch target for map ground taps:
+                            // At high zoom (>= 16.8), the user is zoomed in for precision placement.
+                            // Direct marker taps are handled with 100% accuracy by onMarkerClick.
+                            // Ground taps at high zoom should NEVER auto-latch to a nearby POI,
+                            // allowing the user to freely drop a custom pin anywhere (even right next to a POI).
+                            // At zoom < 16.8, allow a small finger touch-slop tolerance (e.g. ~8m at zoom 16).
+                            val latchThresholdKm = if (cameraZoom >= 16.8) {
+                                0.0
+                            } else {
+                                0.008 * Math.pow(2.0, (16.0 - cameraZoom).coerceIn(-2.0, 2.0))
+                            }
+
+                            val nearbyLogged = if (showLogged && latchThresholdKm > 0.0) {
                                 localRestaurants.minByOrNull {
                                     GeoUtils.calculateDistanceKm(lat, lng, it.latitude, it.longitude)
-                                }?.takeIf { GeoUtils.calculateDistanceKm(lat, lng, it.latitude, it.longitude) < 0.035 }
+                                }?.takeIf { GeoUtils.calculateDistanceKm(lat, lng, it.latitude, it.longitude) < latchThresholdKm }
                             } else null
 
-                            val nearbyPoi = if (showPois) {
+                            val nearbyPoi = if (showPois && latchThresholdKm > 0.0) {
                                 mapplsPois.minByOrNull {
                                     GeoUtils.calculateDistanceKm(lat, lng, it.latitude, it.longitude)
-                                }?.takeIf { GeoUtils.calculateDistanceKm(lat, lng, it.latitude, it.longitude) < 0.035 }
+                                }?.takeIf { GeoUtils.calculateDistanceKm(lat, lng, it.latitude, it.longitude) < latchThresholdKm }
                             } else null
 
                             when {
@@ -708,6 +716,24 @@ fun LocationPickerDialog(
                                 fontWeight = FontWeight.SemiBold,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            IconButton(
+                                onClick = {
+                                    selectedSpotName = null
+                                    selectedSpotSnippet = null
+                                    selectedSpotType = SelectedSpotType.CUSTOM
+                                    selectedPoiId = null
+                                    selectedLoggedId = null
+                                },
+                                modifier = Modifier.size(24.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Close,
+                                    contentDescription = stringResource(R.string.action_close),
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(14.dp)
+                                )
+                            }
                         }
                     }
                 }

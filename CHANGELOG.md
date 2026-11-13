@@ -26,6 +26,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Relocated the map north-south orientation compass to the top-right corner below the GPS FAB in `MapplsMapRenderer`, completely eliminating overlap with the `My Saved` and `Food POIs` filter chips on the top-left.
   - Refined "Search this area" UX: auto-searches silently on pan without flashing; surfaces the floating retry pill only when an area search returns 0 results or fails (network timeout/throttling).
   - Silenced benign `CancellationException` in `LocationPickerDialog` during dialog dismiss to prevent false-positive `Error collecting local restaurants` logcat warnings.
+  - Fixed clustered POI suppression: ensured marker replacement strictly matches the selected POI's unique ID, preserving all other adjacent blue POIs within dense clusters.
+  - Zoom-scaled ground tap latching: disabled auto-latching on ground taps at high zoom levels (>= 16.8) so users can drop custom pins right next to existing POIs with pinpoint precision, while direct marker taps continue to select POIs with 100% accuracy.
+  - Added a 1-tap unlatch button (`✕`) on the selected spot details card to instantly convert any latched POI back into a custom pin.
 - **Zero-Crash Resilience & Offline Graceful Degradation**:
   - Network-gated POI search with safe fallback to local Room SQLite saved places and custom pin placement when offline or when external POI services are unreachable.
 
