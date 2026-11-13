@@ -278,22 +278,22 @@ object MapMarkerFactory {
 
         val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = "#0F172A".toColorInt() // Slate 900
-            textSize = 19f
+            textSize = 21f
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
             textAlign = Paint.Align.CENTER
         }
 
         val textWidth = textPaint.measureText(truncated)
-        val pillPaddingH = 12f
-        val pillWidth = maxOf(textWidth + pillPaddingH * 2f, 66f)
+        val pillPaddingH = 10f
+        val pillWidth = maxOf(textWidth + pillPaddingH * 2f, 60f)
         val pillHeight = 28f
 
-        val circleRadius = 22f
+        val circleRadius = 25f
         val pointerHeight = 10f
         val gap = 3f
 
         val totalHeight = (pillHeight + gap + (circleRadius * 2f) + pointerHeight + 4f).toInt()
-        val totalWidth = maxOf(pillWidth + 10f, 68f).toInt()
+        val totalWidth = maxOf(pillWidth + 10f, 72f).toInt()
 
         val bitmap = createBitmap(totalWidth, totalHeight)
         val canvas = Canvas(bitmap)
@@ -317,8 +317,8 @@ object MapMarkerFactory {
             strokeWidth = 2.5f
         }
 
-        canvas.drawRoundRect(pillRect, 8f, 8f, pillBgPaint)
-        canvas.drawRoundRect(pillRect, 8f, 8f, pillStrokePaint)
+        canvas.drawRoundRect(pillRect, 7f, 7f, pillBgPaint)
+        canvas.drawRoundRect(pillRect, 7f, 7f, pillStrokePaint)
 
         val textY = pillTop + (pillHeight / 2f) - ((textPaint.descent() + textPaint.ascent()) / 2f)
         canvas.drawText(truncated, centerX, textY, textPaint)
@@ -329,9 +329,9 @@ object MapMarkerFactory {
 
         val pinPath = Path().apply {
             addCircle(centerX, circleCenterY, circleRadius, Path.Direction.CW)
-            moveTo(centerX - 8f, circleCenterY + circleRadius - 2f)
+            moveTo(centerX - 9f, circleCenterY + circleRadius - 2f)
             lineTo(centerX, bottomTipY)
-            lineTo(centerX + 8f, circleCenterY + circleRadius - 2f)
+            lineTo(centerX + 9f, circleCenterY + circleRadius - 2f)
             close()
         }
 
@@ -351,7 +351,7 @@ object MapMarkerFactory {
         // 3. Draw Fork-and-Knife Icon inside Circle
         val iconDrawable = ContextCompat.getDrawable(context, R.drawable.ic_marker_restaurant)
         if (iconDrawable != null) {
-            val iconSize = 26
+            val iconSize = 28
             val left = (centerX - iconSize / 2).toInt()
             val top = (circleCenterY - iconSize / 2).toInt()
             iconDrawable.setBounds(left, top, left + iconSize, top + iconSize)

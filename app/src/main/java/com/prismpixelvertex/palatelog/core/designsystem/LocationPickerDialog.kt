@@ -74,6 +74,7 @@ import dagger.hilt.EntryPoint
 import dagger.hilt.InstallIn
 import dagger.hilt.android.EntryPointAccessors
 import dagger.hilt.components.SingletonComponent
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import java.util.Locale
 
@@ -130,6 +131,11 @@ fun LocationPickerDialog(
     var centerLng by remember { mutableDoubleStateOf(startLng) }
     var animationTrigger by remember { mutableLongStateOf(0L) }
 
+    // Live camera position and zoom tracked via map callbacks
+    var cameraCenterLat by remember { mutableDoubleStateOf(startLat) }
+    var cameraCenterLng by remember { mutableDoubleStateOf(startLng) }
+    var cameraZoom by remember { mutableDoubleStateOf(16.0) }
+
     // POI & Saved Restaurant Layer Controls
     var showPois by remember { mutableStateOf(true) }
     var showLogged by remember { mutableStateOf(true) }
@@ -141,6 +147,8 @@ fun LocationPickerDialog(
     var selectedSpotName by remember { mutableStateOf<String?>(null) }
     var selectedSpotSnippet by remember { mutableStateOf<String?>(null) }
     var selectedSpotType by remember { mutableStateOf(SelectedSpotType.CUSTOM) }
+    var selectedPoiId by remember { mutableStateOf<String?>(null) }
+    var selectedLoggedId by remember { mutableStateOf<String?>(null) }
 
     // Fetch user-logged restaurants from local Room database
     val localRestaurants by produceState<List<RestaurantEntity>>(initialValue = emptyList(), restaurantDao) {
@@ -154,12 +162,35 @@ fun LocationPickerDialog(
     }
 
     // Initial search for restaurant POIs around initial coordinates
+    // Initial search for restaurant POIs around initial coordinates
     LaunchedEffect(startLat, startLng, isNetworkAvailable) {
         if (isNetworkAvailable) {
             isSearchingPois = true
-            mapplsPois = MapplsPoiSearchHelper.searchNearbyRestaurants(startLat, startLng, radiusMeters = 1500)
+            val results = MapplsPoiSearchHelper.searchNearbyRestaurants(startLat, startLng, radiusMeters = 1500)
+            if (results.isNotEmpty()) {
+                mapplsPois = results
+            }
             lastSearchedCoords = Pair(startLat, startLng)
             isSearchingPois = false
+        }
+    }
+
+    // Auto-search for restaurant POIs when user pans far away from the previous search area
+    LaunchedEffect(cameraCenterLat, cameraCenterLng, showPois, isNetworkAvailable) {
+        if (showPois && isNetworkAvailable && !isSearchingPois) {
+            val dist = lastSearchedCoords?.let {
+                GeoUtils.calculateDistanceKm(it.first, it.second, cameraCenterLat, cameraCenterLng)
+            } ?: Double.MAX_VALUE
+            if (dist > 0.8) {
+                delay(500)
+                isSearchingPois = true
+                val newPois = MapplsPoiSearchHelper.searchNearbyRestaurants(cameraCenterLat, cameraCenterLng, radiusMeters = 1500)
+                if (newPois.isNotEmpty()) {
+                    mapplsPois = (mapplsPois + newPois).distinctBy { it.id }
+                }
+                lastSearchedCoords = Pair(cameraCenterLat, cameraCenterLng)
+                isSearchingPois = false
+            }
         }
     }
 
@@ -169,15 +200,18 @@ fun LocationPickerDialog(
     // Build consolidated marker list (Saved + Food POIs + Selected Pin)
     val markers = remember(
         selectedLat, selectedLng, selectedSpotName, selectedSpotSnippet, selectedSpotType,
-        showPois, mapplsPois, showLogged, localRestaurants, centerLat, centerLng,
+        selectedPoiId, selectedLoggedId,
+        showPois, mapplsPois, showLogged, localRestaurants,
+        cameraCenterLat, cameraCenterLng, cameraZoom,
         defaultSpotTitle, defaultSpotSnippet
     ) {
         buildList {
             // 1. User-logged restaurants from local DB (colored by verdict: Green, Red, Amber)
             if (showLogged) {
                 localRestaurants.forEach { rest ->
-                    val isCurrentlySelected = selectedSpotType == SelectedSpotType.LOGGED_RESTAURANT &&
-                            selectedLat == rest.latitude && selectedLng == rest.longitude
+                    val isCurrentlySelected = (selectedLoggedId != null && rest.id == selectedLoggedId) ||
+                            (selectedSpotType == SelectedSpotType.LOGGED_RESTAURANT &&
+                                    GeoUtils.calculateDistanceKm(selectedLat, selectedLng, rest.latitude, rest.longitude) < 0.015)
                     // Omit duplicate unselected marker at the exact selected coordinate to prevent z-fighting
                     if (!isCurrentlySelected) {
                         val verdict = try { Verdict.valueOf(rest.overallVerdict) } catch (_: Exception) { Verdict.GO }
@@ -198,24 +232,34 @@ fun LocationPickerDialog(
 
             // 2. Food POIs (distinct Sky Blue bubble with collision-free short name overlay)
             if (showPois) {
-                // Sort POIs relative to current camera center so the active viewport gets label priority
+                // Sort POIs relative to active camera center so the visible area gets label priority
                 val prioritizedPois = mapplsPois.sortedBy { poi ->
-                    GeoUtils.calculateDistanceKm(centerLat, centerLng, poi.latitude, poi.longitude)
+                    GeoUtils.calculateDistanceKm(cameraCenterLat, cameraCenterLng, poi.latitude, poi.longitude)
                 }
 
-                // Spatial anti-collision: do not place two text pills within 75 meters of each other
+                // Dynamic zoom-scaled separation distance (in km):
+                // At zoom 15: ~240m. At zoom 16: ~120m. At zoom 17: ~60m. At zoom 18: ~30m. At zoom 19: ~15m.
+                // As the user zooms in, pins spread apart on screen, so more pins cleanly show their names!
+                val zoomScaleFactor = Math.pow(2.0, (16.0 - cameraZoom).coerceIn(-4.0, 3.0))
+                val labelMinDistanceKm = 0.120 * zoomScaleFactor
+                val pinBufferDistanceKm = labelMinDistanceKm * 0.35
+
                 val labeledLocations = mutableListOf<Pair<Double, Double>>()
 
                 prioritizedPois.forEach { poi ->
-                    val isCurrentlySelected = selectedSpotType == SelectedSpotType.MAPPLS_POI &&
-                            selectedLat == poi.latitude && selectedLng == poi.longitude
+                    val isCurrentlySelected = (selectedPoiId != null && poi.id == selectedPoiId) ||
+                            (selectedSpotType == SelectedSpotType.MAPPLS_POI &&
+                                    GeoUtils.calculateDistanceKm(selectedLat, selectedLng, poi.latitude, poi.longitude) < 0.015)
 
                     // Omit duplicate unselected POI marker at the exact selected coordinate to prevent z-fighting
                     if (!isCurrentlySelected) {
                         val isTooCloseToOtherLabel = labeledLocations.any { (lat, lng) ->
-                            GeoUtils.calculateDistanceKm(poi.latitude, poi.longitude, lat, lng) < 0.075 // 75 meters
+                            GeoUtils.calculateDistanceKm(poi.latitude, poi.longitude, lat, lng) < labelMinDistanceKm
                         }
-                        val showNamePill = !isTooCloseToOtherLabel && labeledLocations.size < 12
+                        val isTooCloseToAdjacentPin = prioritizedPois.any { other ->
+                            other.id != poi.id && GeoUtils.calculateDistanceKm(poi.latitude, poi.longitude, other.latitude, other.longitude) < pinBufferDistanceKm
+                        }
+                        val showNamePill = !isTooCloseToOtherLabel && !isTooCloseToAdjacentPin && labeledLocations.size < 25
                         if (showNamePill) {
                             labeledLocations.add(Pair(poi.latitude, poi.longitude))
                         }
@@ -318,11 +362,47 @@ fun LocationPickerDialog(
                         animationTrigger = animationTrigger,
                         markers = markers,
                         onSingleTap = { lat, lng ->
-                            selectedLat = lat
-                            selectedLng = lng
-                            selectedSpotName = null
-                            selectedSpotSnippet = null
-                            selectedSpotType = SelectedSpotType.CUSTOM
+                            val nearbyLogged = if (showLogged) {
+                                localRestaurants.minByOrNull {
+                                    GeoUtils.calculateDistanceKm(lat, lng, it.latitude, it.longitude)
+                                }?.takeIf { GeoUtils.calculateDistanceKm(lat, lng, it.latitude, it.longitude) < 0.035 }
+                            } else null
+
+                            val nearbyPoi = if (showPois) {
+                                mapplsPois.minByOrNull {
+                                    GeoUtils.calculateDistanceKm(lat, lng, it.latitude, it.longitude)
+                                }?.takeIf { GeoUtils.calculateDistanceKm(lat, lng, it.latitude, it.longitude) < 0.035 }
+                            } else null
+
+                            when {
+                                nearbyLogged != null -> {
+                                    selectedLat = nearbyLogged.latitude
+                                    selectedLng = nearbyLogged.longitude
+                                    selectedSpotName = nearbyLogged.name
+                                    selectedSpotSnippet = "${nearbyLogged.overallVerdict} • ${nearbyLogged.cuisine.ifBlank { nearbyLogged.restaurantType }}"
+                                    selectedSpotType = SelectedSpotType.LOGGED_RESTAURANT
+                                    selectedLoggedId = nearbyLogged.id
+                                    selectedPoiId = null
+                                }
+                                nearbyPoi != null -> {
+                                    selectedLat = nearbyPoi.latitude
+                                    selectedLng = nearbyPoi.longitude
+                                    selectedSpotName = nearbyPoi.name
+                                    selectedSpotSnippet = nearbyPoi.address
+                                    selectedSpotType = SelectedSpotType.MAPPLS_POI
+                                    selectedPoiId = nearbyPoi.id
+                                    selectedLoggedId = null
+                                }
+                                else -> {
+                                    selectedLat = lat
+                                    selectedLng = lng
+                                    selectedSpotName = null
+                                    selectedSpotSnippet = null
+                                    selectedSpotType = SelectedSpotType.CUSTOM
+                                    selectedPoiId = null
+                                    selectedLoggedId = null
+                                }
+                            }
                         },
                         onLongPress = { lat, lng ->
                             selectedLat = lat
@@ -330,6 +410,8 @@ fun LocationPickerDialog(
                             selectedSpotName = null
                             selectedSpotSnippet = null
                             selectedSpotType = SelectedSpotType.CUSTOM
+                            selectedPoiId = null
+                            selectedLoggedId = null
                         },
                         onMarkerClick = { markerId ->
                             when {
@@ -342,6 +424,8 @@ fun LocationPickerDialog(
                                         selectedSpotName = match.name
                                         selectedSpotSnippet = "${match.overallVerdict} • ${match.cuisine.ifBlank { match.restaurantType }}"
                                         selectedSpotType = SelectedSpotType.LOGGED_RESTAURANT
+                                        selectedLoggedId = match.id
+                                        selectedPoiId = null
                                     }
                                 }
                                 markerId.startsWith("POI_") -> {
@@ -353,12 +437,19 @@ fun LocationPickerDialog(
                                         selectedSpotName = match.name
                                         selectedSpotSnippet = match.address
                                         selectedSpotType = SelectedSpotType.MAPPLS_POI
+                                        selectedPoiId = match.id
+                                        selectedLoggedId = null
                                     }
                                 }
                                 markerId == "SELECTED_PIN" -> {
                                     // Already focused on the selected pin
                                 }
                             }
+                        },
+                        onCameraIdle = { lat, lng, zoom ->
+                            cameraCenterLat = lat
+                            cameraCenterLng = lng
+                            cameraZoom = zoom
                         }
                     )
 
@@ -378,8 +469,11 @@ fun LocationPickerDialog(
                                 if (nextState && mapplsPois.isEmpty() && isNetworkAvailable) {
                                     coroutineScope.launch {
                                         isSearchingPois = true
-                                        mapplsPois = MapplsPoiSearchHelper.searchNearbyRestaurants(centerLat, centerLng, 1500)
-                                        lastSearchedCoords = Pair(centerLat, centerLng)
+                                        val newPois = MapplsPoiSearchHelper.searchNearbyRestaurants(cameraCenterLat, cameraCenterLng, 1500)
+                                        if (newPois.isNotEmpty()) {
+                                            mapplsPois = newPois
+                                        }
+                                        lastSearchedCoords = Pair(cameraCenterLat, cameraCenterLng)
                                         isSearchingPois = false
                                     }
                                 }
@@ -438,9 +532,9 @@ fun LocationPickerDialog(
                     }
 
                     // Floating "Search this area" prompt when camera moves away from last search
-                    val needsSearchHere = remember(centerLat, centerLng, lastSearchedCoords, showPois) {
+                    val needsSearchHere = remember(cameraCenterLat, cameraCenterLng, lastSearchedCoords, showPois) {
                         showPois && lastSearchedCoords?.let {
-                            GeoUtils.calculateDistanceKm(it.first, it.second, centerLat, centerLng) > 0.8
+                            GeoUtils.calculateDistanceKm(it.first, it.second, cameraCenterLat, cameraCenterLng) > 0.8
                         } ?: false
                     }
 
@@ -455,8 +549,11 @@ fun LocationPickerDialog(
                                 .clickable {
                                     coroutineScope.launch {
                                         isSearchingPois = true
-                                        mapplsPois = MapplsPoiSearchHelper.searchNearbyRestaurants(centerLat, centerLng, 1500)
-                                        lastSearchedCoords = Pair(centerLat, centerLng)
+                                        val newPois = MapplsPoiSearchHelper.searchNearbyRestaurants(cameraCenterLat, cameraCenterLng, 1500)
+                                        if (newPois.isNotEmpty()) {
+                                            mapplsPois = (mapplsPois + newPois).distinctBy { it.id }
+                                        }
+                                        lastSearchedCoords = Pair(cameraCenterLat, cameraCenterLng)
                                         isSearchingPois = false
                                     }
                                 }

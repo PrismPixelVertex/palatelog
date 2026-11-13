@@ -24,6 +24,7 @@ fun PalateInteractiveMap(
     onSingleTap: ((latitude: Double, longitude: Double) -> Unit)? = null,
     onLongPress: ((latitude: Double, longitude: Double) -> Unit)? = null,
     onMarkerClick: ((markerId: String) -> Unit)? = null,
+    onCameraIdle: ((latitude: Double, longitude: Double, zoom: Double) -> Unit)? = null,
     provider: MapProviderType = MapProviderConfig.getEffectiveProvider()
 ) {
     var fallbackToOsm by remember { mutableStateOf(false) }
@@ -51,6 +52,7 @@ fun PalateInteractiveMap(
                 onSingleTap = onSingleTap,
                 onLongPress = onLongPress,
                 onMarkerClick = onMarkerClick,
+                onCameraIdle = onCameraIdle,
                 onInitializationFailed = {
                     fallbackToOsm = true
                     MapProviderConfig.notifyFallbackEngaged()
