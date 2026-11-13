@@ -274,26 +274,26 @@ object MapMarkerFactory {
 
         // With Short Name Label Pill floating directly above the Sky Blue circular pin
         val cleanLabel = shortLabel.trim()
-        val truncated = if (cleanLabel.length > 13) cleanLabel.take(12).trimEnd() + "…" else cleanLabel
+        val truncated = if (cleanLabel.length > 12) cleanLabel.take(11).trimEnd() + "…" else cleanLabel
 
         val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = "#0F172A".toColorInt() // Slate 900
-            textSize = 21f
+            textSize = 19f
             typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
             textAlign = Paint.Align.CENTER
         }
 
         val textWidth = textPaint.measureText(truncated)
-        val pillPaddingH = 14f
-        val pillWidth = maxOf(textWidth + pillPaddingH * 2f, 72f)
-        val pillHeight = 32f
+        val pillPaddingH = 12f
+        val pillWidth = maxOf(textWidth + pillPaddingH * 2f, 66f)
+        val pillHeight = 28f
 
-        val circleRadius = 24f
-        val pointerHeight = 12f
-        val gap = 4f
+        val circleRadius = 22f
+        val pointerHeight = 10f
+        val gap = 3f
 
         val totalHeight = (pillHeight + gap + (circleRadius * 2f) + pointerHeight + 4f).toInt()
-        val totalWidth = maxOf(pillWidth + 12f, 76f).toInt()
+        val totalWidth = maxOf(pillWidth + 10f, 68f).toInt()
 
         val bitmap = createBitmap(totalWidth, totalHeight)
         val canvas = Canvas(bitmap)
@@ -317,8 +317,8 @@ object MapMarkerFactory {
             strokeWidth = 2.5f
         }
 
-        canvas.drawRoundRect(pillRect, 10f, 10f, pillBgPaint)
-        canvas.drawRoundRect(pillRect, 10f, 10f, pillStrokePaint)
+        canvas.drawRoundRect(pillRect, 8f, 8f, pillBgPaint)
+        canvas.drawRoundRect(pillRect, 8f, 8f, pillStrokePaint)
 
         val textY = pillTop + (pillHeight / 2f) - ((textPaint.descent() + textPaint.ascent()) / 2f)
         canvas.drawText(truncated, centerX, textY, textPaint)

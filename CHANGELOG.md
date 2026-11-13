@@ -11,8 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Automatic Restaurant POI Overlays with OSM Fallback (`LocationPickerDialog`)**:
   - Integrated Mappls Nearby Search API using category code `DINFOD` (Restaurants & Dining) via `MapplsPoiSearchHelper`, coupled with an automatic OpenStreetMap (Nominatim) fallback (`amenity=restaurant`) to reliably surface nearby dining establishments even when Mappls Atlas REST API credentials are unconfigured or unavailable.
   - Added support for configuring `mapplsRestKey` via `keystore.properties` into `BuildConfig.MAPPLS_REST_KEY` for seamless Mappls Atlas REST API authentication.
-  - Rendered dedicated Sky Blue (`#0284C7`) circular map bubble POI pins with floating short name capsule pills directly over the top 7 nearest dining establishments, eliminating visual clutter while giving immediate on-map place awareness.
+  - Rendered dedicated Sky Blue (`#0284C7`) circular map bubble POI pins with floating short name capsule pills. Implemented spatial anti-collision distribution (75-meter minimum separation) prioritizing the active camera viewport, preventing adjacent pins from overlapping while spreading readable names across the visible map.
   - Tapping any restaurant POI pin instantly snaps the coordinates and displays a detailed place information card with place name and address.
+  - Dynamically suppresses duplicate unselected markers at the exact selected coordinate, eliminating marker z-fighting and guaranteeing the selected Amber pin always renders cleanly and exclusively on top.
   - Automatically populates the restaurant name into `EntryEditorScreen` and `QuickCaptureScreen` when confirmed if the user has not yet entered a name.
 - **Differentiated User-Logged Restaurants vs Third-Party POIs**:
   - Displayed all user-registered restaurants from the local Room SQLite database (`RestaurantDao`) with an embossed gold Star badge (`⭐`) on the pin shoulder, making personal saved spots instantly distinguishable from third-party map POIs.

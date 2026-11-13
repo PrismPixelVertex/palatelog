@@ -168,48 +168,73 @@ fun LocationPickerDialog(
 
     // Build consolidated marker list (Saved + Food POIs + Selected Pin)
     val markers = remember(
-        selectedLat, selectedLng, selectedSpotName, selectedSpotSnippet,
-        showPois, mapplsPois, showLogged, localRestaurants,
+        selectedLat, selectedLng, selectedSpotName, selectedSpotSnippet, selectedSpotType,
+        showPois, mapplsPois, showLogged, localRestaurants, centerLat, centerLng,
         defaultSpotTitle, defaultSpotSnippet
     ) {
         buildList {
             // 1. User-logged restaurants from local DB (colored by verdict: Green, Red, Amber)
             if (showLogged) {
                 localRestaurants.forEach { rest ->
-                    val verdict = try { Verdict.valueOf(rest.overallVerdict) } catch (_: Exception) { Verdict.GO }
-                    val type = try { RestaurantType.valueOf(rest.restaurantType) } catch (_: Exception) { RestaurantType.DINE_IN }
-                    add(
-                        PalateMapMarker(
-                            id = "USER_${rest.id}",
-                            latitude = rest.latitude,
-                            longitude = rest.longitude,
-                            title = rest.name,
-                            snippet = "${verdict.name} • ${rest.cuisine.ifBlank { rest.restaurantType }}",
-                            customIcon = MapMarkerFactory.getRestaurantMarker(context, verdict, type)
+                    val isCurrentlySelected = selectedSpotType == SelectedSpotType.LOGGED_RESTAURANT &&
+                            selectedLat == rest.latitude && selectedLng == rest.longitude
+                    // Omit duplicate unselected marker at the exact selected coordinate to prevent z-fighting
+                    if (!isCurrentlySelected) {
+                        val verdict = try { Verdict.valueOf(rest.overallVerdict) } catch (_: Exception) { Verdict.GO }
+                        val type = try { RestaurantType.valueOf(rest.restaurantType) } catch (_: Exception) { RestaurantType.DINE_IN }
+                        add(
+                            PalateMapMarker(
+                                id = "USER_${rest.id}",
+                                latitude = rest.latitude,
+                                longitude = rest.longitude,
+                                title = rest.name,
+                                snippet = "${verdict.name} • ${rest.cuisine.ifBlank { rest.restaurantType }}",
+                                customIcon = MapMarkerFactory.getRestaurantMarker(context, verdict, type)
+                            )
                         )
-                    )
+                    }
                 }
             }
 
-            // 2. Food POIs (distinct Sky Blue bubble with short name overlay on nearest spots)
+            // 2. Food POIs (distinct Sky Blue bubble with collision-free short name overlay)
             if (showPois) {
-                // To avoid visual clutter, render short name overlay on the top 7 closest POIs
-                mapplsPois.forEachIndexed { index, poi ->
-                    val showNamePill = index < 7
-                    val poiIcon = MapMarkerFactory.getPoiRestaurantMarker(
-                        context = context,
-                        shortLabel = if (showNamePill) poi.name else null
-                    )
-                    add(
-                        PalateMapMarker(
-                            id = "POI_${poi.id}",
-                            latitude = poi.latitude,
-                            longitude = poi.longitude,
-                            title = poi.name,
-                            snippet = poi.address,
-                            customIcon = poiIcon
+                // Sort POIs relative to current camera center so the active viewport gets label priority
+                val prioritizedPois = mapplsPois.sortedBy { poi ->
+                    GeoUtils.calculateDistanceKm(centerLat, centerLng, poi.latitude, poi.longitude)
+                }
+
+                // Spatial anti-collision: do not place two text pills within 75 meters of each other
+                val labeledLocations = mutableListOf<Pair<Double, Double>>()
+
+                prioritizedPois.forEach { poi ->
+                    val isCurrentlySelected = selectedSpotType == SelectedSpotType.MAPPLS_POI &&
+                            selectedLat == poi.latitude && selectedLng == poi.longitude
+
+                    // Omit duplicate unselected POI marker at the exact selected coordinate to prevent z-fighting
+                    if (!isCurrentlySelected) {
+                        val isTooCloseToOtherLabel = labeledLocations.any { (lat, lng) ->
+                            GeoUtils.calculateDistanceKm(poi.latitude, poi.longitude, lat, lng) < 0.075 // 75 meters
+                        }
+                        val showNamePill = !isTooCloseToOtherLabel && labeledLocations.size < 12
+                        if (showNamePill) {
+                            labeledLocations.add(Pair(poi.latitude, poi.longitude))
+                        }
+
+                        val poiIcon = MapMarkerFactory.getPoiRestaurantMarker(
+                            context = context,
+                            shortLabel = if (showNamePill) poi.name else null
                         )
-                    )
+                        add(
+                            PalateMapMarker(
+                                id = "POI_${poi.id}",
+                                latitude = poi.latitude,
+                                longitude = poi.longitude,
+                                title = poi.name,
+                                snippet = poi.address,
+                                customIcon = poiIcon
+                            )
+                        )
+                    }
                 }
             }
 
