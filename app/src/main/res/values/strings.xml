@@ -595,7 +595,7 @@
     <string name="location_picker_offline_notice">Offline: Address auto-detection unavailable</string>
     <string name="location_picker_filter_food_pois">Food POIs</string>
     <string name="location_picker_filter_logged">My Saved</string>
-    <string name="location_picker_selected_poi_badge">Mappls POI</string>
+    <string name="location_picker_selected_poi_badge">Food POI</string>
     <string name="location_picker_selected_logged_badge">PalateLog</string>
     <string name="location_picker_poi_default_title">Restaurant POI</string>
     <string name="location_picker_poi_default_snippet">Food &amp; Dining Point of Interest</string>

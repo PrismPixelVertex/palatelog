@@ -21,7 +21,8 @@ data class RestaurantPoi(
     val address: String,
     val latitude: Double,
     val longitude: Double,
-    val distanceMeters: Long? = null
+    val distanceMeters: Long? = null,
+    val source: String = "Mappls"
 )
 
 /**
@@ -50,32 +51,32 @@ object MapplsPoiSearchHelper {
 
         Log.d(TAG, "[POI Search] Initiating dining search at ($latitude, $longitude), radius=${radiusMeters}m")
 
-        // Level 1 & Level 2: Try Mappls Nearby Search if Mappls map engine is initialized
+        // Level 1: Try Mappls Nearby Search if Mappls map engine is initialized
         if (MapProviderConfig.isMapplsInitialized) {
             try {
                 val mapplsResults = searchMapplsNearby(latitude, longitude, radiusMeters)
                 if (mapplsResults.isNotEmpty()) {
                     return mapplsResults
                 }
-                Log.i(TAG, "[Level 1 & 2 - Mappls] All Mappls queries returned 0 results. Falling back to Level 3 (OpenStreetMap)...")
+                Log.i(TAG, "[Level 1 - Mappls] Mappls search returned 0 results. Falling back to Level 2 (OpenStreetMap)...")
             } catch (e: Exception) {
-                Log.w(TAG, "[Level 1 & 2 - Mappls] Mappls search threw exception, falling back to Level 3 (OpenStreetMap)", e)
+                Log.w(TAG, "[Level 1 - Mappls] Mappls search threw exception, falling back to Level 2 (OpenStreetMap)", e)
             }
         } else {
-            Log.i(TAG, "[Level 1 & 2 - Mappls] Mappls map engine not initialized. Skipping to Level 3 (OpenStreetMap)...")
+            Log.i(TAG, "[Level 1 - Mappls] Mappls map engine not initialized. Skipping to Level 2 (OpenStreetMap)...")
         }
 
-        // Level 3: Fallback to OpenStreetMap food POI search (Option A.2)
+        // Level 2: Fallback to OpenStreetMap food POI search (Option A.2)
         return try {
             val osmResults = searchOsmFoodPois(latitude, longitude, radiusMeters)
             if (osmResults.isNotEmpty()) {
-                Log.d(TAG, "[Level 3 - OSM Fallback] Discovered ${osmResults.size} POIs via OpenStreetMap")
+                Log.d(TAG, "[Level 2 - OSM Fallback] Discovered ${osmResults.size} POIs via OpenStreetMap")
             } else {
-                Log.w(TAG, "[Level 3 - OSM Fallback] 0 POIs discovered via OpenStreetMap fallback")
+                Log.w(TAG, "[Level 2 - OSM Fallback] 0 POIs discovered via OpenStreetMap fallback")
             }
             osmResults
         } catch (e: Exception) {
-            Log.w(TAG, "[Level 3 - OSM Fallback] OSM food POI fallback search failed", e)
+            Log.w(TAG, "[Level 2 - OSM Fallback] OSM food POI fallback search failed", e)
             emptyList()
         }
     }
@@ -85,26 +86,17 @@ object MapplsPoiSearchHelper {
         longitude: Double,
         radiusMeters: Int
     ): List<RestaurantPoi> {
-        // Level 1: Try official Mappls Category Code "DINFOD" (Restaurants & Dining)
-        Log.d(TAG, "[Level 1 - Mappls DINFOD] Querying Mappls Nearby with category 'DINFOD'...")
-        val dinfodResults = executeMapplsNearbyCall(latitude, longitude, radiusMeters, "DINFOD", "Level 1 - Mappls DINFOD")
-        if (dinfodResults.isNotEmpty()) {
-            Log.d(TAG, "[Level 1 - Mappls DINFOD] SUCCESS: Discovered ${dinfodResults.size} POIs via 'DINFOD'")
-            return dinfodResults
+        // Multi-keyword dining query using Mappls ';' (OR) operator to search across categories in a single call:
+        // Prioritizes official Mappls category code FODCOF (Food & Coffee) for higher-quality verified listings,
+        // with natural keywords (restaurant, cafe, food) as fallbacks.
+        val diningKeywords = "FODCOF;restaurant;cafe;food"
+        Log.d(TAG, "[Level 1 - Mappls] Querying Mappls Nearby with multi-keyword '$diningKeywords'...")
+        val results = executeMapplsNearbyCall(latitude, longitude, radiusMeters, diningKeywords, "Level 1 - Mappls")
+        if (results.isNotEmpty()) {
+            Log.d(TAG, "[Level 1 - Mappls] SUCCESS: Discovered ${results.size} POIs via multi-keyword '$diningKeywords'")
+            return results
         }
-        Log.i(TAG, "[Level 1 - Mappls DINFOD] 0 POIs returned for 'DINFOD'. Advancing to Level 2 (common keywords)...")
-
-        // Level 2: Try common dining keywords across India (essential for Tier-2 cities where DINFOD returns 204)
-        val candidateKeywords = listOf("restaurant", "food")
-        for (kw in candidateKeywords) {
-            Log.d(TAG, "[Level 2 - Mappls Keywords] Querying Mappls Nearby with keyword '$kw'...")
-            val results = executeMapplsNearbyCall(latitude, longitude, radiusMeters, kw, "Level 2 - Mappls Keywords")
-            if (results.isNotEmpty()) {
-                Log.d(TAG, "[Level 2 - Mappls Keywords] SUCCESS: Discovered ${results.size} POIs via keyword '$kw'")
-                return results
-            }
-            Log.i(TAG, "[Level 2 - Mappls Keywords] 0 POIs returned for keyword '$kw'")
-        }
+        Log.i(TAG, "[Level 1 - Mappls] 0 POIs returned for '$diningKeywords'")
         return emptyList()
     }
 
@@ -120,6 +112,7 @@ object MapplsPoiSearchHelper {
                 .setLocation(latitude, longitude)
                 .keyword(keyword)
                 .radius(radiusMeters)
+                .itemCount(30)
                 .build()
 
             val manager = MapplsNearbyManager.newInstance(nearby)
@@ -137,7 +130,8 @@ object MapplsPoiSearchHelper {
                                 address = item.placeAddress?.trim().orEmpty(),
                                 latitude = lat,
                                 longitude = lng,
-                                distanceMeters = item.distance
+                                distanceMeters = item.distance,
+                                source = "Mappls"
                             )
                         } else {
                             null
@@ -171,8 +165,8 @@ object MapplsPoiSearchHelper {
         val radiusKm = (radiusMeters / 1000.0).coerceAtLeast(0.5)
         val box = GeoUtils.getBoundingBox(latitude, longitude, radiusKm)
 
-        // Level 3a: Primary query using q=restaurant to cover all dining categories (mess, dhabas, fast food, cafes)
-        Log.d(TAG, "[Level 3 - OSM Fallback] Querying Nominatim with q=restaurant in bounding box...")
+        // Level 2a: Primary query using q=restaurant to cover all dining categories (mess, dhabas, fast food, cafes)
+        Log.d(TAG, "[Level 2 - OSM Fallback] Querying Nominatim with q=restaurant in bounding box...")
         val primaryUrl = "https://nominatim.openstreetmap.org/search" +
                 "?format=json" +
                 "&q=restaurant" +
@@ -187,12 +181,12 @@ object MapplsPoiSearchHelper {
 
         val results = fetchOsmResults(primaryRequest, latitude, longitude, "q=restaurant")
         if (results.isNotEmpty()) {
-            Log.d(TAG, "[Level 3 - OSM Fallback] SUCCESS: Discovered ${results.size} POIs via q=restaurant")
+            Log.d(TAG, "[Level 2 - OSM Fallback] SUCCESS: Discovered ${results.size} POIs via q=restaurant")
             return@withContext results
         }
 
-        // Level 3b: Secondary fallback using amenity=restaurant
-        Log.i(TAG, "[Level 3 - OSM Fallback] 0 results for q=restaurant. Trying secondary fallback (amenity=restaurant)...")
+        // Level 2b: Secondary fallback using amenity=restaurant
+        Log.i(TAG, "[Level 2 - OSM Fallback] 0 results for q=restaurant. Trying secondary fallback (amenity=restaurant)...")
         val fallbackUrl = "https://nominatim.openstreetmap.org/search" +
                 "?format=json" +
                 "&amenity=restaurant" +
@@ -207,7 +201,7 @@ object MapplsPoiSearchHelper {
 
         val fallbackResults = fetchOsmResults(fallbackRequest, latitude, longitude, "amenity=restaurant")
         if (fallbackResults.isNotEmpty()) {
-            Log.d(TAG, "[Level 3 - OSM Fallback] SUCCESS: Discovered ${fallbackResults.size} POIs via amenity=restaurant")
+            Log.d(TAG, "[Level 2 - OSM Fallback] SUCCESS: Discovered ${fallbackResults.size} POIs via amenity=restaurant")
         }
         fallbackResults
     }
@@ -221,7 +215,7 @@ object MapplsPoiSearchHelper {
         return try {
             httpClient.newCall(request).execute().use { response ->
                 if (!response.isSuccessful) {
-                    Log.w(TAG, "[Level 3 - OSM Fallback] HTTP error for $queryType: code=${response.code}")
+                    Log.w(TAG, "[Level 2 - OSM Fallback] HTTP error for $queryType: code=${response.code}")
                     return emptyList()
                 }
                 val body = response.body.string()
@@ -251,7 +245,8 @@ object MapplsPoiSearchHelper {
                                 address = displayName,
                                 latitude = lat,
                                 longitude = lon,
-                                distanceMeters = (distKm * 1000).toLong()
+                                distanceMeters = (distKm * 1000).toLong(),
+                                source = "OSM"
                             )
                         )
                     }
@@ -259,7 +254,7 @@ object MapplsPoiSearchHelper {
                 results.sortedBy { it.distanceMeters ?: Long.MAX_VALUE }
             }
         } catch (e: Exception) {
-            Log.w(TAG, "[Level 3 - OSM Fallback] Exception while querying $queryType", e)
+            Log.w(TAG, "[Level 2 - OSM Fallback] Exception while querying $queryType", e)
             emptyList()
         }
     }

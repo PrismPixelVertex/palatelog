@@ -154,6 +154,7 @@ fun LocationPickerDialog(
     var selectedSpotSnippet by remember { mutableStateOf<String?>(null) }
     var selectedSpotType by remember { mutableStateOf(SelectedSpotType.CUSTOM) }
     var selectedPoiId by remember { mutableStateOf<String?>(null) }
+    var selectedPoiSource by remember { mutableStateOf<String?>(null) }
     var selectedLoggedId by remember { mutableStateOf<String?>(null) }
 
     // Fetch user-logged restaurants from local Room database
@@ -417,6 +418,7 @@ fun LocationPickerDialog(
                                     selectedSpotType = SelectedSpotType.LOGGED_RESTAURANT
                                     selectedLoggedId = nearbyLogged.id
                                     selectedPoiId = null
+                                    selectedPoiSource = null
                                 }
                                 nearbyPoi != null -> {
                                     selectedLat = nearbyPoi.latitude
@@ -425,6 +427,7 @@ fun LocationPickerDialog(
                                     selectedSpotSnippet = nearbyPoi.address
                                     selectedSpotType = SelectedSpotType.MAPPLS_POI
                                     selectedPoiId = nearbyPoi.id
+                                    selectedPoiSource = nearbyPoi.source
                                     selectedLoggedId = null
                                 }
                                 else -> {
@@ -434,6 +437,7 @@ fun LocationPickerDialog(
                                     selectedSpotSnippet = null
                                     selectedSpotType = SelectedSpotType.CUSTOM
                                     selectedPoiId = null
+                                    selectedPoiSource = null
                                     selectedLoggedId = null
                                 }
                             }
@@ -445,6 +449,7 @@ fun LocationPickerDialog(
                             selectedSpotSnippet = null
                             selectedSpotType = SelectedSpotType.CUSTOM
                             selectedPoiId = null
+                            selectedPoiSource = null
                             selectedLoggedId = null
                         },
                         onMarkerClick = { markerId ->
@@ -460,6 +465,7 @@ fun LocationPickerDialog(
                                         selectedSpotType = SelectedSpotType.LOGGED_RESTAURANT
                                         selectedLoggedId = match.id
                                         selectedPoiId = null
+                                        selectedPoiSource = null
                                     }
                                 }
                                 markerId.startsWith("POI_") -> {
@@ -472,6 +478,7 @@ fun LocationPickerDialog(
                                         selectedSpotSnippet = match.address
                                         selectedSpotType = SelectedSpotType.MAPPLS_POI
                                         selectedPoiId = match.id
+                                        selectedPoiSource = match.source
                                         selectedLoggedId = null
                                     }
                                 }
@@ -732,7 +739,11 @@ fun LocationPickerDialog(
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
                                 text = if (selectedSpotType == SelectedSpotType.MAPPLS_POI) {
-                                    stringResource(R.string.location_picker_selected_poi_badge)
+                                    if (!selectedPoiSource.isNullOrBlank()) {
+                                        "$selectedPoiSource POI"
+                                    } else {
+                                        stringResource(R.string.location_picker_selected_poi_badge)
+                                    }
                                 } else {
                                     stringResource(R.string.location_picker_selected_logged_badge)
                                 },
@@ -748,6 +759,7 @@ fun LocationPickerDialog(
                                     selectedSpotSnippet = null
                                     selectedSpotType = SelectedSpotType.CUSTOM
                                     selectedPoiId = null
+                                    selectedPoiSource = null
                                     selectedLoggedId = null
                                 },
                                 modifier = Modifier.size(24.dp)
