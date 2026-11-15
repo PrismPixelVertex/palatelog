@@ -76,11 +76,30 @@ object MapplsPoiSearchHelper {
         latitude: Double,
         longitude: Double,
         radiusMeters: Int
+    ): List<RestaurantPoi> {
+        // Try standard dining search keywords across India. In Tier-2 cities, Mappls Atlas matches
+        // "restaurant" and "food" reliably, whereas the internal category code "DINFOD" returns 204.
+        val candidateKeywords = listOf("restaurant", "food", "DINFOD")
+        for (kw in candidateKeywords) {
+            val results = executeMapplsNearbyCall(latitude, longitude, radiusMeters, kw)
+            if (results.isNotEmpty()) {
+                Log.d(TAG, "Discovered ${results.size} POIs via Mappls Nearby (keyword='$kw')")
+                return results
+            }
+        }
+        return emptyList()
+    }
+
+    private suspend fun executeMapplsNearbyCall(
+        latitude: Double,
+        longitude: Double,
+        radiusMeters: Int,
+        keyword: String
     ): List<RestaurantPoi> = suspendCancellableCoroutine { continuation ->
         try {
             val nearby = MapplsNearby.builder()
                 .setLocation(latitude, longitude)
-                .keyword("DINFOD")
+                .keyword(keyword)
                 .radius(radiusMeters)
                 .build()
 
@@ -109,7 +128,7 @@ object MapplsPoiSearchHelper {
                 }
 
                 override fun onError(code: Int, message: String?) {
-                    Log.w(TAG, "Mappls nearby search returned error: code=$code, message=$message")
+                    Log.w(TAG, "Mappls nearby search (keyword='$keyword') returned: code=$code, message=$message")
                     continuation.resume(emptyList())
                 }
             })
@@ -120,7 +139,7 @@ object MapplsPoiSearchHelper {
                 } catch (_: Exception) {}
             }
         } catch (e: Exception) {
-            Log.w(TAG, "Mappls nearby exception", e)
+            Log.w(TAG, "Mappls nearby exception (keyword='$keyword')", e)
             continuation.resume(emptyList())
         }
     }
@@ -132,52 +151,89 @@ object MapplsPoiSearchHelper {
     ): List<RestaurantPoi> = withContext(Dispatchers.IO) {
         val radiusKm = (radiusMeters / 1000.0).coerceAtLeast(0.5)
         val box = GeoUtils.getBoundingBox(latitude, longitude, radiusKm)
-        // Nominatim viewbox parameter: <minLon>,<maxLat>,<maxLon>,<minLat>
-        val url = "https://nominatim.openstreetmap.org/search" +
+        // Nominatim query with bounded viewbox: <minLon>,<maxLat>,<maxLon>,<minLat>
+        // Use q=restaurant to cover all dining categories (fast food, mess, dhabas, cafes, restaurants)
+        val primaryUrl = "https://nominatim.openstreetmap.org/search" +
+                "?format=json" +
+                "&q=restaurant" +
+                "&viewbox=${box.minLng},${box.maxLat},${box.maxLng},${box.minLat}" +
+                "&bounded=1" +
+                "&limit=40"
+
+        val primaryRequest = Request.Builder()
+            .url(primaryUrl)
+            .header("User-Agent", "PalateLog-Android/1.0 (Food POI Discovery)")
+            .build()
+
+        val results = fetchOsmResults(primaryRequest, latitude, longitude)
+        if (results.isNotEmpty()) {
+            return@withContext results
+        }
+
+        // Secondary fallback to amenity=restaurant in case q=restaurant yields no results
+        val fallbackUrl = "https://nominatim.openstreetmap.org/search" +
                 "?format=json" +
                 "&amenity=restaurant" +
                 "&viewbox=${box.minLng},${box.maxLat},${box.maxLng},${box.minLat}" +
                 "&bounded=1" +
                 "&limit=40"
 
-        val request = Request.Builder()
-            .url(url)
+        val fallbackRequest = Request.Builder()
+            .url(fallbackUrl)
             .header("User-Agent", "PalateLog-Android/1.0 (Food POI Discovery)")
             .build()
 
-        httpClient.newCall(request).execute().use { response ->
-            if (!response.isSuccessful) {
-                Log.w(TAG, "OSM search HTTP failed: code=${response.code}")
-                return@withContext emptyList()
-            }
-            val body = response.body.string()
-            if (body.isBlank()) return@withContext emptyList()
+        fetchOsmResults(fallbackRequest, latitude, longitude)
+    }
 
-            val jsonArray = JSONArray(body)
-            val results = mutableListOf<RestaurantPoi>()
-            for (i in 0 until jsonArray.length()) {
-                val item = jsonArray.getJSONObject(i)
-                val name = item.optString("name").trim()
-                val lat = item.optDouble("lat", 0.0)
-                val lon = item.optDouble("lon", 0.0)
-                val placeId = item.optString("place_id", "${lat}_${lon}")
-                val displayName = item.optString("display_name").trim()
-
-                if (name.isNotBlank() && lat != 0.0 && lon != 0.0) {
-                    val distKm = GeoUtils.calculateDistanceKm(latitude, longitude, lat, lon)
-                    results.add(
-                        RestaurantPoi(
-                            id = placeId,
-                            name = name,
-                            address = displayName,
-                            latitude = lat,
-                            longitude = lon,
-                            distanceMeters = (distKm * 1000).toLong()
-                        )
-                    )
+    private fun fetchOsmResults(
+        request: Request,
+        centerLat: Double,
+        centerLng: Double
+    ): List<RestaurantPoi> {
+        return try {
+            httpClient.newCall(request).execute().use { response ->
+                if (!response.isSuccessful) {
+                    Log.w(TAG, "OSM search HTTP failed: code=${response.code}")
+                    return emptyList()
                 }
+                val body = response.body.string()
+                if (body.isBlank()) return emptyList()
+
+                val jsonArray = JSONArray(body)
+                val results = mutableListOf<RestaurantPoi>()
+                for (i in 0 until jsonArray.length()) {
+                    val item = jsonArray.getJSONObject(i)
+                    val rawName = item.optString("name").trim()
+                    val displayName = item.optString("display_name").trim()
+                    val name = when {
+                        rawName.isNotBlank() -> rawName
+                        displayName.isNotBlank() -> displayName.split(",").firstOrNull()?.trim().orEmpty()
+                        else -> ""
+                    }
+                    val lat = item.optDouble("lat", 0.0)
+                    val lon = item.optDouble("lon", 0.0)
+                    val placeId = item.optString("place_id", "${lat}_${lon}")
+
+                    if (name.isNotBlank() && lat != 0.0 && lon != 0.0) {
+                        val distKm = GeoUtils.calculateDistanceKm(centerLat, centerLng, lat, lon)
+                        results.add(
+                            RestaurantPoi(
+                                id = placeId,
+                                name = name,
+                                address = displayName,
+                                latitude = lat,
+                                longitude = lon,
+                                distanceMeters = (distKm * 1000).toLong()
+                            )
+                        )
+                    }
+                }
+                results.sortedBy { it.distanceMeters ?: Long.MAX_VALUE }
             }
-            results.sortedBy { it.distanceMeters ?: Long.MAX_VALUE }
+        } catch (e: Exception) {
+            Log.w(TAG, "Failed parsing OSM search response", e)
+            emptyList()
         }
     }
 }

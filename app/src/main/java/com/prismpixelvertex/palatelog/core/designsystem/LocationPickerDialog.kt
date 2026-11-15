@@ -487,6 +487,13 @@ fun LocationPickerDialog(
                         }
                     )
 
+                    // Count how many discovered POIs fall within the currently visible map area (~800m)
+                    val visiblePoisCount = remember(mapplsPois, cameraCenterLat, cameraCenterLng) {
+                        mapplsPois.count { poi ->
+                            GeoUtils.calculateDistanceKm(cameraCenterLat, cameraCenterLng, poi.latitude, poi.longitude) < 0.8
+                        }
+                    }
+
                     // Floating Filter Chips at Top-Start (Saved Restaurants & Food POIs toggle)
                     Row(
                         modifier = Modifier
@@ -524,12 +531,12 @@ fun LocationPickerDialog(
                             onClick = {
                                 val nextState = !showPois
                                 showPois = nextState
-                                if (nextState && mapplsPois.isEmpty() && isNetworkAvailable) {
+                                if (nextState && isNetworkAvailable && (mapplsPois.isEmpty() || visiblePoisCount == 0)) {
                                     coroutineScope.launch {
                                         isSearchingPois = true
                                         val newPois = MapplsPoiSearchHelper.searchNearbyRestaurants(cameraCenterLat, cameraCenterLng, 1500)
                                         if (newPois.isNotEmpty()) {
-                                            mapplsPois = newPois
+                                            mapplsPois = (mapplsPois + newPois).distinctBy { it.id }
                                             searchFailedOrEmpty = false
                                         } else {
                                             searchFailedOrEmpty = true
@@ -567,8 +574,9 @@ fun LocationPickerDialog(
                         )
                     }
 
-                    // Floating "Search this area" prompt when search in the current area was empty or failed
-                    val shouldShowSearchAreaButton = showPois && searchFailedOrEmpty && !isSearchingPois
+                    // Floating "Search this area" prompt when search in the current area was empty or failed,
+                    // or when the user panned to an area where discovered POIs are currently outside the viewport.
+                    val shouldShowSearchAreaButton = showPois && (searchFailedOrEmpty || (mapplsPois.isNotEmpty() && visiblePoisCount == 0)) && !isSearchingPois
 
                     if (shouldShowSearchAreaButton) {
                         Surface(

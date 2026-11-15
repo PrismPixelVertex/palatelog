@@ -5,6 +5,18 @@ All notable changes to PalateLog will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.35] - 2026-11-15
+
+### Fixed (Restaurant POI Discovery in Tier-2 Cities & Viewport Resiliency)
+- **Multi-Keyword Mappls Nearby Search Resiliency (`MapplsPoiSearchHelper`)**:
+  - Replaced hardcoded category keyword `DINFOD` with prioritized sequential search keywords (`restaurant`, `food`, `DINFOD`). In Tier-2 cities (such as Madurai, Coimbatore, Trichy, and Salem), Mappls Atlas returned HTTP 204 No Content for the internal category code `DINFOD` because POIs were indexed under natural dining keywords. Sequential querying guarantees robust POI discovery across both Tier-1 metros and Tier-2 regions.
+- **Comprehensive OpenStreetMap Nominatim Fallback (`MapplsPoiSearchHelper`)**:
+  - Broadened the OpenStreetMap food fallback query from strictly `amenity=restaurant` to generic dining search (`q=restaurant`), capturing cafes, messes, tiffin centers, dhabas, and fast-food stalls that are commonly tagged outside the strict `restaurant` amenity tag in India.
+  - Implemented resilient place name extraction: falls back to the leading segment of `display_name` if the individual `name` attribute is omitted in the OSM record.
+- **Viewport-Aware Search & Refresh Affordance (`LocationPickerDialog`)**:
+  - Tracked whether discovered POIs are currently within the active screen viewport (~800m). If the user pans away or if all discovered POIs are located off-screen, the floating **"Search this area"** pill remains visible to afford easy 1-tap re-discovery.
+  - Enhanced the `🍽️ Food POIs` filter chip: toggling the chip back ON triggers an immediate refresh at the active camera center if no POIs are currently visible in the active viewport.
+
 ## [1.2.34] - 2026-11-13
 
 ### Added & Enhanced (What's New Upgrade Showcase & Interactive Map Guide)
