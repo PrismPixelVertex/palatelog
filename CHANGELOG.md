@@ -16,9 +16,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Comprehensive OpenStreetMap Nominatim Fallback (`MapplsPoiSearchHelper`)**:
   - Broadened the OpenStreetMap food fallback query from strictly `amenity=restaurant` to generic dining search (`q=restaurant`), capturing cafes, messes, tiffin centers, dhabas, and fast-food stalls that are commonly tagged outside the strict `restaurant` amenity tag in India.
   - Implemented resilient place name extraction: falls back to the leading segment of `display_name` if the individual `name` attribute is omitted in the OSM record.
-- **Viewport-Aware Search & Refresh Affordance (`LocationPickerDialog`)**:
-  - Tracked whether discovered POIs are currently within the active screen viewport (~800m). If the user pans away or if all discovered POIs are located off-screen, the floating **"Search this area"** pill remains visible to afford easy 1-tap re-discovery.
-  - Enhanced the `🍽️ Food POIs` filter chip: toggling the chip back ON triggers an immediate refresh at the active camera center if no POIs are currently visible in the active viewport.
+- **Inactivity-Based "Search this area" Discovery (`LocationPickerDialog`)**:
+  - Implemented responsive camera inactivity detection: when panning or zooming stops for 1 second and the camera center is moved >250m away from the last searched coordinates (or if the previous search yielded no results), the floating **"Search this area"** pill smoothly appears.
+  - Tapping the button immediately discovers dining spots for the exact camera center and dismisses the pill, eliminating navigation dead-zones and making area search effortless.
+- **What's New Showcase for Release 1.2.35 (`WhatsNewRegistry`)**:
+  - Registered user-facing release highlights for version `1.2.35` (code `44`) showcasing Pan-India Dining Discovery and Seamless Area Search with direct redirection to the interactive Map Guide.
 
 ## [1.2.34] - 2026-11-13
 

@@ -148,6 +148,7 @@ fun LocationPickerDialog(
     var mapplsPois by remember { mutableStateOf<List<RestaurantPoi>>(emptyList()) }
     var lastSearchedCoords by remember { mutableStateOf<Pair<Double, Double>?>(null) }
     var searchFailedOrEmpty by remember { mutableStateOf(false) }
+    var isCameraMovedFromLastSearch by remember { mutableStateOf(false) }
 
     // Selected spot details for display banner and confirmation
     var selectedSpotName by remember { mutableStateOf<String?>(null) }
@@ -186,15 +187,30 @@ fun LocationPickerDialog(
         }
     }
 
-    // Auto-search for restaurant POIs when user pans far away from the previous search area
+    // Detect camera movement away from last search center and surface "Search this area" button after 1s inactivity
+    LaunchedEffect(cameraCenterLat, cameraCenterLng, cameraZoom, lastSearchedCoords, searchFailedOrEmpty) {
+        val dist = lastSearchedCoords?.let {
+            GeoUtils.calculateDistanceKm(it.first, it.second, cameraCenterLat, cameraCenterLng)
+        } ?: 0.0
+
+        if (dist > 0.25 || searchFailedOrEmpty) {
+            delay(1000)
+            isCameraMovedFromLastSearch = true
+        } else {
+            isCameraMovedFromLastSearch = false
+        }
+    }
+
+    // Auto-search for restaurant POIs when user pans very far away (> 1.2km) from previous search area
     LaunchedEffect(cameraCenterLat, cameraCenterLng, showPois, isNetworkAvailable) {
         if (showPois && isNetworkAvailable && !isSearchingPois) {
             val dist = lastSearchedCoords?.let {
                 GeoUtils.calculateDistanceKm(it.first, it.second, cameraCenterLat, cameraCenterLng)
             } ?: Double.MAX_VALUE
-            if (dist > 0.8) {
-                delay(500)
+            if (dist > 1.2) {
+                delay(1200)
                 isSearchingPois = true
+                isCameraMovedFromLastSearch = false
                 val newPois = MapplsPoiSearchHelper.searchNearbyRestaurants(cameraCenterLat, cameraCenterLng, radiusMeters = 1500)
                 if (newPois.isNotEmpty()) {
                     mapplsPois = (mapplsPois + newPois).distinctBy { it.id }
@@ -581,9 +597,9 @@ fun LocationPickerDialog(
                         )
                     }
 
-                    // Floating "Search this area" prompt when search in the current area was empty or failed,
-                    // or when the user panned to an area where discovered POIs are currently outside the viewport.
-                    val shouldShowSearchAreaButton = showPois && (searchFailedOrEmpty || (mapplsPois.isNotEmpty() && visiblePoisCount == 0)) && !isSearchingPois
+                    // Floating "Search this area" prompt when user has panned away from the last search center,
+                    // when discovered POIs are outside the viewport, or when previous search yielded no results.
+                    val shouldShowSearchAreaButton = showPois && (isCameraMovedFromLastSearch || searchFailedOrEmpty || (mapplsPois.isNotEmpty() && visiblePoisCount == 0)) && !isSearchingPois
 
                     if (shouldShowSearchAreaButton) {
                         Surface(
@@ -596,6 +612,7 @@ fun LocationPickerDialog(
                                 .clickable {
                                     coroutineScope.launch {
                                         isSearchingPois = true
+                                        isCameraMovedFromLastSearch = false
                                         val newPois = MapplsPoiSearchHelper.searchNearbyRestaurants(cameraCenterLat, cameraCenterLng, 1500)
                                         if (newPois.isNotEmpty()) {
                                             mapplsPois = (mapplsPois + newPois).distinctBy { it.id }

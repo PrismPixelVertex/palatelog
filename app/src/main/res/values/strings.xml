@@ -612,6 +612,11 @@
     <string name="whats_new_title">What\'s New in PalateLog 🍽️</string>
     <string name="whats_new_action_got_it">Got It</string>
     <string name="whats_new_action_explore_guide">Explore Guide</string>
+    <string name="whats_new_1_2_35_subtitle">Version 1.2.35 • Pan-India Food Discovery</string>
+    <string name="whats_new_feature_pan_india_title">Pan-India Dining Discovery</string>
+    <string name="whats_new_feature_pan_india_desc">Expanded coverage across India—from major metros to Tier-2 towns and highways—discovering up to 30 restaurants, cafes, and food spots around your location.</string>
+    <string name="whats_new_feature_search_area_title">Seamless Area Search</string>
+    <string name="whats_new_feature_search_area_desc">Pan the map to explore new neighborhoods—the \"Search this area\" button appears whenever you navigate, giving you instant one-tap food discovery.</string>
     <string name="whats_new_1_2_34_subtitle">Version 1.2.34 • Map Overlays &amp; Past Dishes</string>
     <string name="whats_new_feature_poi_title">Nearby Food POIs &amp; Overlays</string>
     <string name="whats_new_feature_poi_desc">Discover dining spots directly on the map with collision-free name badges that scale smoothly with zoom.</string>
