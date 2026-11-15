@@ -5,6 +5,23 @@ All notable changes to PalateLog will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.35] - 2026-11-15
+
+### Fixed (Restaurant POI Discovery in Tier-2 Cities & Viewport Resiliency)
+- **Single Multi-Keyword Mappls Nearby Search Resiliency (`MapplsPoiSearchHelper`)**:
+  - Leveraged Mappls' multi-keyword OR operator (`;`) in a single consolidated query prioritizing verified category codes first (`FODCOF;restaurant;cafe;food`). In Tier-1 metros, verified `FODCOF` listings take precedence, while natural keywords serve as fallbacks in Tier-2 regions. Configured `.itemCount(30)` on `MapplsNearby.builder()` (overriding the default 10 POI page size) to deliver up to 30 dining establishments within the active search radius in a single network round-trip.
+- **Source-Attributed POI Confirmation Badge (`LocationPickerDialog`)**:
+  - Attached source attribution metadata (`Mappls` vs `OSM`) to each discovered `RestaurantPoi`.
+  - Updated the tapped POI confirmation card badge to dynamically display `Mappls POI` or `OSM POI` (with generic `Food POI` fallback), providing complete visibility to testers across India regarding which geospatial provider supplied the location details.
+- **Comprehensive OpenStreetMap Nominatim Fallback (`MapplsPoiSearchHelper`)**:
+  - Broadened the OpenStreetMap food fallback query from strictly `amenity=restaurant` to generic dining search (`q=restaurant`), capturing cafes, messes, tiffin centers, dhabas, and fast-food stalls that are commonly tagged outside the strict `restaurant` amenity tag in India.
+  - Implemented resilient place name extraction: falls back to the leading segment of `display_name` if the individual `name` attribute is omitted in the OSM record.
+- **Inactivity-Based "Search this area" Discovery (`LocationPickerDialog`)**:
+  - Implemented responsive camera inactivity detection: when panning or zooming stops for 1 second and the camera center is moved >250m away from the last searched coordinates (or if the previous search yielded no results), the floating **"Search this area"** pill smoothly appears.
+  - Tapping the button immediately discovers dining spots for the exact camera center and dismisses the pill, eliminating navigation dead-zones and making area search effortless.
+- **What's New Showcase for Release 1.2.35 (`WhatsNewRegistry`)**:
+  - Registered user-facing release highlights for version `1.2.35` (code `44`) showcasing Pan-India Dining Discovery and Seamless Area Search with direct redirection to the interactive Map Guide.
+
 ## [1.2.34] - 2026-11-13
 
 ### Added & Enhanced (What's New Upgrade Showcase & Interactive Map Guide)
