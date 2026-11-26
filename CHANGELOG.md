@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Upgraded `org.gradle.toolchains.foojay-resolver-convention` from `0.10.0` to `1.0.0` for Gradle 9.x compatibility.
   - Prioritized `gradlePluginPortal()` in `pluginManagement.repositories` and scoped the Mappls Maven repository (`https://maven.mappls.com/repository/mappls/`) with `content { includeGroupByRegex("com\\.mappls.*") }` in both `pluginManagement` and `dependencyResolutionManagement` so Gradle plugins and non-Mappls artifacts do not query third-party repositories.
   - Added `--stacktrace` to the CodeQL Gradle build step in `.github/workflows/codeql.yml` so repository or build errors surface full diagnostics.
+- **Android Gradle Plugin** Minor version upgrade 9.5.1 to 9.5.2.
 
 ## [1.2.35] - 2026-11-15
 
